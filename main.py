@@ -43,23 +43,23 @@ class Point:
 def translate2(pt, vec):
     if isinstance(vec[0], Number):
         return translate_const(pt, vec)
-    elif isinstance(vec[0], str):
+    elif isinstance(vec[0], Param):
         return translate_param1(pt, vec)
 
 def translate_const(pt, vec):
     pass
 
 def translate_param1(pt, vec):
-    pname = vec[0]
+    param = vec[0]
 
-    deltax = pt.params[pname]
+    deltax = param.compute()
     deltay = vec[1]
 
     x2 = pt.x + deltax
     y2 = pt.y + deltay
 
     _grads = {}
-    _grads[pname] = [
+    _grads[param.name] = [
         [1],
         [0]
     ]
@@ -84,7 +84,7 @@ def rotate_param(pt, origin, angle_param):
     ox = origin.x
     oy = origin.y
 
-    angle = pt.params[angle_param]
+    angle = angle_param.compute()
 
     x2 = (x1 - ox) * np.cos(angle) - (y1 - oy) * np.sin(angle) + ox
     y2 = (x1 - ox) * np.sin(angle) + (y1 - oy) * np.cos(angle) + oy
@@ -100,7 +100,7 @@ def rotate_param(pt, origin, angle_param):
     ]
 
     _grads = {}
-    _grads[angle_param] = dangle
+    _grads[angle_param.name] = dangle
 
     pt2 = copy.deepcopy(pt)
     pt2.x = x2
@@ -203,11 +203,14 @@ def main():
 
         """
 
-        pt = Point(0, 0, {"l":l, "theta":theta})
+        l = Param("l", l)
+        theta = Param("theta", theta)
+
+        pt = Point(0, 0)
         
-        pt2 = translate2(pt, ["l", 0])
-        pt3 = rotate_param(pt2, pt, "theta")
-        pt4 = translate2(pt3, ["l", 0])
+        pt2 = translate2(pt, [l, 0])
+        pt3 = rotate_param(pt2, pt, theta)
+        pt4 = translate2(pt3, [2*l, 0])
 
         return pt4, pt4.grads
 
