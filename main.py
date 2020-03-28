@@ -45,6 +45,18 @@ class Point:
     def grads(self):
         return copy.deepcopy(self.gradients)
 
+    def update_grads(self, new_grads):
+        pt2 = copy.deepcopy(self)
+        pt2grads = pt2.gradients
+
+        for param, grad in new_grads.items():
+            if param in pt2grads:
+                pt2grads[param] *= np.array(new_grads[param])
+            else:
+                pt2grads[param] = new_grads[param]
+
+        return pt2
+
 def translate2(pt, vec):
     if isinstance(vec[0], Number):
         return translate_const(pt, vec)
@@ -69,16 +81,9 @@ def translate_param1(pt, vec):
         [0]
     ]
 
-    pt2 = copy.deepcopy(pt)
+    pt2 = pt.update_grads(_grads)
     pt2.x = x2
     pt2.y = y2
-    pt2grads = pt2.gradients
-
-    for param, grad in _grads.items():
-        if param in pt2grads:
-            pt2grads[param] *= np.array(_grads[param])
-        else:
-            pt2grads[param] = _grads[param]
 
     return pt2
 
@@ -107,15 +112,9 @@ def rotate_param(pt, origin, angle_param):
     _grads = {}
     _grads[angle_param.name] = dangle
 
-    pt2 = copy.deepcopy(pt)
+    pt2 = pt.update_grads(_grads)
     pt2.x = x2
     pt2.y = y2
-
-    for param, grad in _grads.items():
-        if param in pt2.gradients:
-            pt2.gradients[param] *= np.array(_grads[param])
-        else:
-            pt2.gradients[param] = _grads[param]
 
     return pt2
 
@@ -130,17 +129,6 @@ def l2_distance(p1, p2):
 
 def main():
     def parametric_pt(l=2.0, theta=np.radians(60)):
-        """
-        
-        ideal:
-
-        l = Param()
-        theta = Param()
-
-        translate2(pt, [2 * l, 0])
-
-        """
-
         l = Param("l", l)
         theta = Param("theta", theta)
 
