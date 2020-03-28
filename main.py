@@ -6,12 +6,32 @@ from numbers import Number
 
 from scipy import optimize
 
+class Param:
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+        self.factor = 1
+        self.power = 1
+
+    def __rmul__(self, other):
+        self_copy = copy.deepcopy(self)
+
+        if isinstance(other, Number):
+            self_copy.factor = other
+
+        return self_copy
+
+    def __repr__(self):
+        return "Param({}*{}={})".format(self.factor, self.name, self.value)
+
+    def compute(self):
+        return self.factor * self.value ** self.power
+
 class Point:
-    def __init__(self, x, y, params):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
         self.gradients = {}
-        self.params = params
 
     def __repr__(self):
         return "Pt({:.4f},{:.4f})".format(self.x, self.y)
