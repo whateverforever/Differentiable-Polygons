@@ -75,7 +75,6 @@ class Point:
 
             # we already have a trace to this parameter
             if param in old_grads:
-                print("Trying to chain ", param)
                 # we take our gradient towards last point
                 # and the gradient of old point towards parameter
                 # d_dl = d_dprev @ dprev_dl
@@ -129,14 +128,12 @@ def norm(pt):
 
     l2_norm = np.sqrt(pt.x**2 + pt.y ** 2)
 
-    grad = [[pt.x/np.sqrt(pt.x**2 + pt.y**2), pt.y/np.sqrt(pt.x**2 + pt.y**2)]]
+    grad_pt = [[pt.x/np.sqrt(pt.x**2 + pt.y**2), pt.y/np.sqrt(pt.x**2 + pt.y**2)]]
 
     grads = {}
-    grads["d_prevpt"] = grad
+    grads["d_prevpt"] = grad_pt
 
-    print("new grads:", grads)
-
-    # Point isnt the right class. Should Differentiable or Scalar or Thing or sth
+    # TODO: Point isnt the right class. Should Differentiable or Scalar or Thing or sth
     length = pt.update_grads(grads)
     length.x = l2_norm
     length.y = 0
@@ -187,8 +184,7 @@ def l2_distance(p1, p2):
 
     return dist, dp1.reshape(-1,2), dp2
 
-def main():
-    def parametric_pt(l=2.0, theta=np.radians(60)):
+def parametric_pt(l=2.0, theta=np.radians(60)):
         l = Param("l", l)
         theta = Param("theta", theta)
 
@@ -198,54 +194,40 @@ def main():
         pt3 = rotate_param(pt2, pt, theta)
         pt4 = translate(pt3, [2*l, 0])
 
-        #length = norm(pt4)
-        #print(length)
+        length = norm(pt4)
 
-        """
-        A = diff_vec = pt4 - pt2
-        dA/dparams = pt4.grads() - pt2.grads()
+        return length, length.grads
 
-        B = diff = diff_vec.length()
-        dB/dparams = dlength/dA * dA/dparams
-        
-        translate(pt4, [diff * l, 0])  # diff * l is a Scalar/Point * param
-            diff.compute() * l.compute()
-
-            if other is param:
-                per parameter:
-                    self.grad[parameter] *= other.grad() * self.compute() + self.grad() * other.compute()
-        """
-
-        return pt4, pt4.grads
-
+def main():
     print("Go ####################\n\n")
-
-    target = np.array([5.5, 1.1])
-
-    def jac(x):
-        l, theta = x
-        pt, pt_grads = parametric_pt(l, theta)
-        dist, dp1,_ = l2_distance([pt.x, pt.y], target)
-
-        grads = []
-        for param, grad in pt_grads.items():
-            grads.append(float(dp1 @ grad))
-
-        return np.array(grads)
 
     def f(x):
         l, theta = x
         pt, grads = parametric_pt(l, theta)
-        dist,_,_ = l2_distance(np.array([pt.x, pt.y]), target)
+        dist = pt.x
 
         return dist
 
-    res = optimize.minimize(f, [2.0, np.radians(60)], jac=jac)
+    def jac(x):
+        l, theta = x
+        pt, pt_grads = parametric_pt(l, theta)
 
+        grads = []
+        for param in ["l", "theta"]:
+            grads.append(pt_grads[param])
+
+        return np.squeeze(grads)
+
+    x0 = [2.0, np.radians(60)]
+
+    # with jac: succ, nfev=74, nit=8
+    # without jac: no succ, nfev=252, nit=7
+    res = optimize.minimize(f, x0, method="L-BFGS-B", jac=jac)
+    length_reached, _  = parametric_pt(*res.x)
     print(res)
-
-    pt_reached, _  = parametric_pt(*res.x)
-    print("Target was {}, arrived at {}".format(target, pt_reached))
+    print("Started from {}".format(x0))
+    print("Jac at start: {}".format(jac(x0)))
+    print("Length reached: ", length_reached)
 
 if __name__ == "__main__":
     main()
