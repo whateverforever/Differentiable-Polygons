@@ -1,10 +1,10 @@
 import copy
-import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np  # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
 
 from numbers import Number
 
-from scipy import optimize
+from scipy import optimize  # type: ignore
 
 
 class Param:
