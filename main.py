@@ -200,7 +200,9 @@ def parametric_pt(l=2.0, theta=np.radians(60)):
         pt3 = rotate_param(pt2, pt, theta)
         pt4 = translate(pt3, [2*l, 0])
 
-        length = norm(pt4)
+        diff_vec = diffvec(pt4, Point(8, 2))
+
+        length = norm(diff_vec)
 
         return length, length.grads
 
