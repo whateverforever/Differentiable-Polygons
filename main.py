@@ -175,14 +175,20 @@ def rotate_param(pt, origin, angle_param):
 
     return pt2
 
-def l2_distance(p1, p2):
+def diffvec(p1, p2):
+    diff_vec = [p1.x - p2.x, p1.y - p2.y]
 
-    dist = np.linalg.norm(p1 - p2)
+    _grads = {}
+    _grads["d_prevpt"] = np.array([
+        [1, 0],
+        [0, 1]
+    ])
 
-    dp1 = 2 * (p1 - p2)
-    dp2 = 2 * (p1 - p2) * -1
+    pt_new = p1.update_grads(_grads)
+    pt_new.x = diff_vec[0]
+    pt_new.y = diff_vec[1]
 
-    return dist, dp1.reshape(-1,2), dp2
+    return pt_new
 
 def parametric_pt(l=2.0, theta=np.radians(60)):
         l = Param("l", l)
