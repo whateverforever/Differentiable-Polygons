@@ -224,18 +224,51 @@ def main():
         for param in ["l", "theta"]:
             grads.append(pt_grads[param])
 
+        #print("grad={}, norm={}".format(np.squeeze(grads), np.linalg.norm(np.squeeze(grads))))
         return np.squeeze(grads)
 
     x0 = [2.0, np.radians(60)]
+    xs = []
+    def reporter(xk):
+        xs.append(xk)
 
     # with jac: succ, nfev=74, nit=8
     # without jac: no succ, nfev=252, nit=7
-    res = optimize.minimize(f, x0, method="L-BFGS-B", jac=jac)
+    res = optimize.minimize(f, x0, method="BFGS", jac=jac, callback=reporter)
     length_reached, _  = parametric_pt(*res.x)
+    
+    xs = np.array(xs)
+    fig, axes = plt.subplots(ncols=2)
+
+    xxs, yys = np.meshgrid(
+        np.linspace(np.min(xs[:,0]), np.max(xs[:,0]), 50),
+        np.linspace(np.min(xs[:,1]), np.max(xs[:,1]), 50)
+    )
+    zzs = np.zeros_like(xxs)
+    for ix, x in enumerate(np.linspace(np.min(xs[:,0]), np.max(xs[:,0]), 50)):
+        for iy, y in enumerate(np.linspace(np.min(xs[:,1]), np.max(xs[:,1]), 50)):
+            z = f([x, y])
+            zzs[ix, iy] = z
+    axes[0].contourf(xxs, yys, zzs, levels=50)
+    axes[0].plot(xs[:,0], xs[:,1], "-o")
+    axes[0].set_title("Solution Space")
+    axes[0].set_xlabel("l")
+    axes[0].set_ylabel("theta")
+
+    axes[1].plot(range(len(xs)), [f(x) for x in xs])
+    axes[1].set_title("Convergence Plot")
+    axes[1].set_ylabel("Objective Fun.")
+    axes[1].set_xlabel("Iteration #")
+
+    plt.tight_layout()
+    plt.show()
+
     print(res)
-    print("Started from {}".format(x0))
-    print("Jac at start: {}".format(jac(x0)))
-    print("Length reached: ", length_reached)
+    print("x initial: {}".format(x0))
+    print("x final: {}".format(res.x))
+
+    print("Initial distance: {}".format(f(x0)))
+    print("Final   distance: {}".format(length_reached.x))
 
 if __name__ == "__main__":
     main()
