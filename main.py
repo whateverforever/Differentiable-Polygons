@@ -40,32 +40,14 @@ class Param:
         return self.factor * self.power * self.value ** (self.power - 1)
 
 
-class Differentiable:
+class GradientCarrier:
     def __init__(self):
         pass
-
-
-class Scalar:
-    def __init__(self, value):
-        self.value = value
-        self.gradients = {}
-
-    def __repr__(self):
-        return "Scalar({:.4f})".format(self.value)
 
     @property
     def grads(self):
         return copy.deepcopy(self.gradients)
 
-    @staticmethod
-    def from_point(pt):
-        aa = Scalar(0)
-        aa.value = pt.x
-        aa.gradients = copy.deepcopy(pt.gradients)
-
-        return aa
-
-    # copied from Point
     def update_grads(self, new_grads):
         """
         Chains new gradients onto the current ones
@@ -98,7 +80,24 @@ class Scalar:
         return new_scalar
 
 
-class Point:
+class Scalar(GradientCarrier):
+    def __init__(self, value):
+        self.value = value
+        self.gradients = {}
+
+    def __repr__(self):
+        return "Scalar({:.4f})".format(self.value)
+
+    @staticmethod
+    def from_point(pt):
+        aa = Scalar(0)
+        aa.value = pt.x
+        aa.gradients = copy.deepcopy(pt.gradients)
+
+        return aa
+
+
+class Point(GradientCarrier):
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -106,41 +105,6 @@ class Point:
 
     def __repr__(self):
         return "Pt({:.4f},{:.4f})".format(self.x, self.y)
-
-    @property
-    def grads(self):
-        return copy.deepcopy(self.gradients)
-
-    def update_grads(self, new_grads):
-        """
-        Chains new gradients onto the current ones
-        """
-        pt2 = copy.deepcopy(self)
-        old_grads = pt2.gradients
-        updated_grads = {}
-
-        params = set(old_grads.keys()).union(set(new_grads.keys()))
-
-        for param in params:
-            if param == "d_dprevpt":
-                continue
-
-            # we already have a trace to this parameter
-            if param in old_grads:
-                # we take our gradient towards last point
-                # and the gradient of old point towards parameter
-                # d_dl = d_dprev @ dprev_dl
-                updated_grads[param] = (
-                    np.array(new_grads["d_dprevpt"]) @ old_grads[param]
-                )
-
-            # we don't have a trace yet, meaning we start one
-            else:
-                # d_dl = XXX
-                updated_grads[param] = new_grads[param]
-
-        pt2.gradients = updated_grads
-        return pt2
 
 
 Vector = Point
