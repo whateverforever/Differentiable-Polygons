@@ -160,37 +160,52 @@ class Line(GradientCarrier):
             ]
         ]
 
-        new_grads = {}
-        new_grads["p1"] = d_dpt1 = np.vstack([dm_dp1, db_dp1])
-        new_grads["p2"] = d_dpt2 = np.vstack([dm_dp2, db_dp2])
-        new_grads["l"] = [[0], [10]]
+        local_grads = {}
+        local_grads["p1"] = d_dpt1 = np.vstack([dm_dp1, db_dp1])
+        local_grads["p2"] = d_dpt2 = np.vstack([dm_dp2, db_dp2])
+        local_grads["abc"] = [[0], [10]]
+
+        # the signature for the following gradient computation:
+        # inputs, local_grads --> out_grads
 
         incoming_parameters = []
         for input_name, input_obj in args.items():
             incoming_parameters.extend(list(input_obj.grads.keys()))
         incoming_parameters = list(set(incoming_parameters))
 
-        for param in incoming_parameters:
+        # Parameters that previous operations don't know anything about
+        # I.e. maybe we did translations on `l` before, and now a rotation
+        # on new parameter `theta`
+        own_parameters = [
+            param
+            for param in local_grads.keys()
+            if param not in args.keys() and param not in incoming_parameters
+        ]
+
+        out_grads = {}
+        for param in incoming_parameters + own_parameters:
             grads = []
 
             # If we have inputs that depended on parameters
             for input_name, input_obj in args.items():
+                # If one of the inputs doesn't depend on the parameter, we simply
+                # ignore it. No gradient information in there!
                 if param in input_obj.grads:
-                    dself_dinput = new_grads[input_name]
+                    dself_dinput = local_grads[input_name]
                     dinput_dparam = input_obj.grads[param]
 
                     grads.append(dself_dinput @ dinput_dparam)
 
-            # If we got directly injected a parameter
-            if param in new_grads:
-                dself_dparam = new_grads[param]
+            # If we got directly injected a parameter as input (i.e. rotate(pt, theta))
+            if param in local_grads:
+                dself_dparam = local_grads[param]
 
                 grads.append(dself_dparam)
 
-            new_grads[param] = np.sum(grads, axis=0)
+            out_grads[param] = np.sum(grads, axis=0)
 
         new_line = Line(m, b)
-        new_line.gradients = new_grads
+        new_line.gradients = out_grads
 
         print("Gradients:", new_line.grads)
 
@@ -327,6 +342,8 @@ def parametric_pt(l=2.0, theta=np.radians(60)):
 
     pt = Point(0, 0)
 
+    # TODO: This vector has to have a gradient too, so `incoming_parameters` realizes
+    # that there has been a parameter injected
     pt2 = translate(pt, [l, 0])
     pt3 = rotate_param(pt2, pt, theta)
     pt4 = translate(pt3, [2 * l, 0])
