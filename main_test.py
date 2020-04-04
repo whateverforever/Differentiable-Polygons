@@ -80,7 +80,3 @@ class TestLine(ut.TestCase):
         line = Line.make_from_points(pt2, pt)
 
         assert np.shape(line.grads["l"]) == (2, 1)
-
-        # temporary
-        assert np.allclose(line.grads["p1"], [[-2, 1], [2, -1]])
-        assert np.allclose(line.grads["p2"], [[2, -1], [-4, 2]])
