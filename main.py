@@ -160,17 +160,14 @@ class Line(GradientCarrier):
             ]
         ]
 
-        d_dpt1 = np.vstack([dm_dp1, db_dp1])
-        d_dpt2 = np.vstack([dm_dp2, db_dp2])
-
-        dp1_dl = p1.grads["l"] if "l" in p1.grads else [[0], [0]]
-        dp2_dl = p2.grads["l"] if "l" in p2.grads else [[0], [0]]
-
-        incoming_parameters = set(p1.grads.keys()).union(set(p2.grads.keys()))
-
         new_grads = {}
-        new_grads["p1"] = d_dpt1
-        new_grads["p2"] = d_dpt2
+        new_grads["p1"] = d_dpt1 = np.vstack([dm_dp1, db_dp1])
+        new_grads["p2"] = d_dpt2 = np.vstack([dm_dp2, db_dp2])
+
+        incoming_parameters = []
+        for input_name, input_obj in args.items():
+            incoming_parameters.extend(list(input_obj.grads.keys()))
+        incoming_parameters = list(set(incoming_parameters))
 
         for param in incoming_parameters:
             grads = []
