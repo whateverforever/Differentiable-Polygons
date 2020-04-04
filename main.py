@@ -163,6 +163,7 @@ class Line(GradientCarrier):
         new_grads = {}
         new_grads["p1"] = d_dpt1 = np.vstack([dm_dp1, db_dp1])
         new_grads["p2"] = d_dpt2 = np.vstack([dm_dp2, db_dp2])
+        new_grads["l"] = [[0], [10]]
 
         incoming_parameters = []
         for input_name, input_obj in args.items():
@@ -172,12 +173,19 @@ class Line(GradientCarrier):
         for param in incoming_parameters:
             grads = []
 
+            # If we have inputs that depended on parameters
             for input_name, input_obj in args.items():
                 if param in input_obj.grads:
-                    d_dinput = new_grads[input_name]
+                    dself_dinput = new_grads[input_name]
                     dinput_dparam = input_obj.grads[param]
 
-                    grads.append(d_dinput @ dinput_dparam)
+                    grads.append(dself_dinput @ dinput_dparam)
+
+            # If we got directly injected a parameter
+            if param in new_grads:
+                dself_dparam = new_grads[param]
+
+                grads.append(dself_dparam)
 
             new_grads[param] = np.sum(grads, axis=0)
 
