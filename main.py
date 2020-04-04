@@ -172,9 +172,12 @@ class Line(GradientCarrier):
         for param in incoming_parameters:
             grads = []
 
-            for input_name, input_val in args.items():
-                if param in input_val.grads:
-                    grads.append(new_grads[input_name] @ input_val.grads[param])
+            for input_name, input_obj in args.items():
+                if param in input_obj.grads:
+                    d_dinput = new_grads[input_name]
+                    dinput_dparam = input_obj.grads[param]
+
+                    grads.append(d_dinput @ dinput_dparam)
 
             new_grads[param] = np.sum(grads, axis=0)
 
