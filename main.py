@@ -51,9 +51,9 @@ class GradientCarrier:
         old_grads = new_scalar.gradients
         updated_grads = {}
 
-        params = set(old_grads.keys()).union(set(new_grads.keys()))
+        incoming_params = set(old_grads.keys()).union(set(new_grads.keys()))
 
-        for param in params:
+        for param in incoming_params:
             if param == "d_dprevpt":
                 continue
 
