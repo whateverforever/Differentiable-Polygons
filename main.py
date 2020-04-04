@@ -1,4 +1,5 @@
 import copy
+
 import numpy as np  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
 
@@ -8,12 +9,6 @@ from scipy import optimize  # type: ignore
 
 
 class Param:
-    """
-    Class used so that geometrical operations can access named parameters, and
-    can change their gradients (from only const). Allows for a factor in front
-    and a power in the back. But not more atm.
-    """
-
     def __init__(self, name, value):
         self.name = name
         self.value = value
@@ -42,7 +37,7 @@ class Param:
 
 class GradientCarrier:
     def __init__(self):
-        pass
+        self.gradients = {}
 
     @property
     def grads(self):
@@ -83,7 +78,7 @@ class GradientCarrier:
 class Scalar(GradientCarrier):
     def __init__(self, value):
         self.value = value
-        self.gradients = {}
+        super().__init__()
 
     def __repr__(self):
         return "Scalar({:.4f})".format(self.value)
@@ -101,7 +96,7 @@ class Point(GradientCarrier):
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.gradients = {}
+        super().__init__()
 
     def __repr__(self):
         return "Pt({:.4f},{:.4f})".format(self.x, self.y)
