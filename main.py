@@ -105,6 +105,121 @@ class Point(GradientCarrier):
 Vector = Point
 
 
+class Line(GradientCarrier):
+    """ Simple class representing a line, used to construct the unit cell """
+
+    # TODO: Replace by better representation with no singularities
+    def __init__(self, m, b):
+        self.m = m
+        self.b = b
+        super().__init__()
+
+    @staticmethod
+    def make_from_points(p1: Point, p2: Point):
+        return Line.make_from_points_({"p1": p1, "p2": p2})
+
+    @staticmethod
+    def make_from_points_(args: dict):
+        """ Returns line that goes through p1 and p2 """
+        p1 = args["p1"]
+        p2 = args["p2"]
+
+        x1 = p1.x
+        y1 = p1.y
+
+        x2 = p2.x
+        y2 = p2.y
+
+        b = (y1 * x2 - y2 * x1) / (x2 - x1)
+        m = (y2 - b) / x2
+
+        db_dp1 = [
+            [
+                -(y2 / (-x1 + x2)) + (x2 * y1 - x1 * y2) / (-x1 + x2) ** 2,
+                x2 / (-x1 + x2),
+            ]
+        ]
+        db_dp2 = [
+            [
+                y1 / (-x1 + x2) - (x2 * y1 - x1 * y2) / (-x1 + x2) ** 2,
+                -(x1 / (-x1 + x2)),
+            ]
+        ]
+
+        dm_dp1 = [
+            [
+                (y2 / (-x1 + x2) - (x2 * y1 - x1 * y2) / (-x1 + x2) ** 2) / x2,
+                -(1 / (-x1 + x2)),
+            ]
+        ]
+        dm_dp2 = [
+            [
+                (-(y1 / (-x1 + x2)) + (x2 * y1 - x1 * y2) / (-x1 + x2) ** 2) / x2
+                - (y2 - (x2 * y1 - x1 * y2) / (-x1 + x2)) / x2 ** 2,
+                (1 + x1 / (-x1 + x2)) / x2,
+            ]
+        ]
+
+        d_dpt1 = np.vstack([dm_dp1, db_dp1])
+        d_dpt2 = np.vstack([dm_dp2, db_dp2])
+
+        dp1_dl = p1.grads["l"] if "l" in p1.grads else [[0], [0]]
+        dp2_dl = p2.grads["l"] if "l" in p2.grads else [[0], [0]]
+
+        incoming_parameters = set(p1.grads.keys()).union(set(p2.grads.keys()))
+
+        new_grads = {}
+        new_grads["p1"] = d_dpt1
+        new_grads["p2"] = d_dpt2
+
+        for param in incoming_parameters:
+            grads = []
+
+            for input_name, input_val in args.items():
+                if param in input_val.grads:
+                    grads.append(new_grads[input_name] @ input_val.grads[param])
+
+            new_grads[param] = np.sum(grads, axis=0)
+
+        new_line = Line(m, b)
+        new_line.gradients = new_grads
+
+        print("Gradients:", new_line.grads)
+
+        return new_line
+
+    """
+    def plot(self, ax=plt, lims=(-20, 20, 10)):
+        x = np.linspace(*lims)
+        y = self.m * x + self.b
+
+        ax.plot(x, y)
+
+    def translate(self, dx, dy):
+        new_line = copy.deepcopy(self)
+        new_line.b += dy
+        new_line.b -= new_line.m * dx
+
+        return new_line
+
+    def rotate_ccw(self, theta, pivot=None):
+        if pivot is None:
+            pivot = [0, 0]
+
+        new_line = copy.deepcopy(self)
+        new_line = new_line.translate(-pivot[0], -pivot[1])
+        new_line.m = np.tan(np.arctan(new_line.m) + theta)
+        new_line = new_line.translate(pivot[0], pivot[1])
+
+        return new_line
+
+    def intersect(self, other_line):
+        x = (other_line.b - self.b) / (self.m - other_line.m)
+        y = self.m * x + self.b
+        return np.array((x, y))
+    """
+
+
 def translate(pt, vec):
     deltax = vec[0].compute() if isinstance(vec[0], Param) else vec[0]
     deltay = vec[1].compute() if isinstance(vec[1], Param) else vec[1]
