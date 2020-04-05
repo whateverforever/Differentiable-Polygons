@@ -283,28 +283,16 @@ class Line(GradientCarrier):
     """
 
 
-def translate(pt, vec):
-    deltax = vec[0].compute() if isinstance(vec[0], Param) else vec[0]
-    deltay = vec[1].compute() if isinstance(vec[1], Param) else vec[1]
+def translate(pt: Point, vec: Point):
+    x2 = pt.x + vec.x
+    y2 = pt.y + vec.y
 
-    x2 = pt.x + deltax
-    y2 = pt.y + deltay
-
+    inputs = {"pt": pt, "vec": vec}
     _grads = {}
-    if isinstance(vec[0], Param):
-        _grads[vec[0].name] = [[vec[0].grad()], [0]]
+    _grads["pt"] = np.array([[1, 0], [0, 1]])
+    _grads["vec"] = np.array([[1, 0], [0, 1]])
 
-    if isinstance(vec[1], Param):
-        _grads[vec[1].name] = [[0], [vec[1].grad()]]
-
-    d_dprevpt = np.array([[1, 0], [0, 1]])
-
-    _grads["d_dprevpt"] = d_dprevpt
-
-    pt2 = pt.update_grads(_grads)
-    pt2.x = x2
-    pt2.y = y2
-
+    pt2 = Point(x2, y2).with_grads_from_previous(inputs, _grads)
     return pt2
 
 

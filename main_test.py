@@ -91,11 +91,11 @@ class TestOverall(ut.TestCase):
 
 class TestTranslate(ut.TestCase):
     def test_parameter_translate(self):
-        l = Param("l", 1.0)
-        theta = Param("theta", np.radians(60))
+        l = make_param("l", 1.0)
+        theta = make_param("theta", np.radians(60))
 
         pt = Point(0, 0)
-        pt2 = translate(pt, [l, 0])
+        pt2 = translate(pt, Point(l, 0))
 
         assert pt2.x == l.value
         assert np.shape(pt2.grads["l"]) == (2, 1)
@@ -103,11 +103,11 @@ class TestTranslate(ut.TestCase):
 
 class TestLine(ut.TestCase):
     def test_from_points(self):
-        l = Param("l", 1.0)
-        theta = Param("theta", np.radians(60))
+        l = make_param("l", 1.0)
+        theta = make_param("theta", np.radians(60))
 
         pt = Point(1, 1)
-        pt2 = translate(pt, [l, 2])
+        pt2 = translate(pt, Point(l, 2))
 
         line = Line.make_from_points(pt2, pt)
 
