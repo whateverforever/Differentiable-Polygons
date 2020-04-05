@@ -9,11 +9,6 @@ from numbers import Number
 from scipy import optimize  # type: ignore
 
 
-def make_param(name, value):
-    grads = {name: [[1.0]]}
-    return Scalar(value).with_grads(grads)
-
-
 class GradientCarrier:
     def __init__(self):
         self.gradients = {}
@@ -86,6 +81,11 @@ class Scalar(GradientCarrier):
         aa.gradients = copy.deepcopy(pt.gradients)
 
         return aa
+
+    @staticmethod
+    def Param(name, value):
+        grads = {name: [[1.0]]}
+        return Scalar(value).with_grads(grads)
 
 
 class Point(GradientCarrier):
@@ -336,8 +336,8 @@ def diffvec(p1, p2):
 
 
 def parametric_pt(l=2.0, theta=np.radians(60)):
-    l = make_param("l", l)
-    theta = make_param("theta", theta)
+    l = Scalar.Param("l", l)
+    theta = Scalar.Param("theta", theta)
 
     pt = Point(0, 0)
 
