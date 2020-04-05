@@ -106,6 +106,18 @@ class Point(GradientCarrier):
     def __repr__(self):
         return "Pt({:.4f},{:.4f})".format(self.x, self.y)
 
+    def __neg__(self):
+        x1 = self.x
+        y1 = self.y
+
+        x2 = -x1
+        y2 = -y1
+
+        inputs = {"x": x1, "y": y1}
+        grads = {"x": [[-1], [0]], "y": [[0], [-1]]}
+
+        return Point(x2, y2).with_grads_from_previous(inputs, grads)
+
 
 Vector = Point
 
