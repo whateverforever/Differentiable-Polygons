@@ -7,6 +7,7 @@ from main import (
     norm,
     Scalar,
     Point,
+    Vector,
     Line,
 )  # type:ignore
 
@@ -39,23 +40,46 @@ class TestParameter(ut.TestCase):
         assert np.allclose(pt.grads["l"], [[0.0], [2.0]])
 
 
-"""
-class TestOverall(ut.TestCase):
+class TestIntegration(ut.TestCase):
+    def test_TRT(self):
+        l = Scalar.Param("l", 2.0)
+        # TODO: l2 = Scalar.Param("l2", 0.15 * l)
+        # TODO: l3 = Scalar.Param("l3", l2 + 0.5 * l)
+        l2 = Scalar.Param("l2", 3.5)
+        theta = Scalar.Param("theta", np.radians(45))
+
+        pt = Point(0, 0)
+        pt2 = translate(pt, Vector(l, 0))
+        pt3 = rotate_param(pt2, pt, theta)
+        pt4 = translate(pt3, Vector(0, 0.5 * l))
+        pt5 = translate(pt4, Vector(4 * l2, 0))
+
+        assert np.allclose(pt5.x, l.value * np.cos(theta.value) + 4 * l2.value)
+        assert np.allclose(pt5.y, l.value * np.sin(theta.value) + 0.5 * l.value)
+
+        assert "l2" in pt5.grads
+        assert np.allclose(
+            pt5.grads["l"], [[np.cos(theta.value)], [np.sin(theta.value) + 0.5]]
+        )
+        assert np.allclose(
+            pt5.grads["theta"],
+            [[-l.value * np.sin(theta.value)], [l.value * np.cos(theta.value)]],
+        )
+        assert np.allclose(pt5.grads["l2"], [[4], [0]])
+
     def test_norm_optimization(self):
         from scipy import optimize  # type: ignore
 
         def parametric_pt(l=2.0, theta=np.radians(60)):
-            l = Param("l", l)
-            theta = Param("theta", theta)
+            l = Scalar.Param("l", l)
+            theta = Scalar.Param("theta", theta)
 
             pt = Point(0, 0)
-
-            pt2 = translate(pt, [l, 0])
+            pt2 = translate(pt, Vector(l, 0))
             pt3 = rotate_param(pt2, pt, theta)
-            pt4 = translate(pt3, [2 * l, 0])
+            pt4 = translate(pt3, Vector(2 * l, 0))
 
             diff_vec = diffvec(pt4, Point(8, 2))
-
             length = norm(diff_vec)
 
             return length, length.grads
@@ -84,7 +108,6 @@ class TestOverall(ut.TestCase):
         length_reached, _ = parametric_pt(*res.x)
 
         assert np.isclose(length_reached.value, 0)
-"""
 
 
 class TestTranslate(ut.TestCase):
