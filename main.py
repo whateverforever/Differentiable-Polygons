@@ -127,10 +127,10 @@ class Line(GradientCarrier):
         return Line.make_from_points_({"p1": p1, "p2": p2})
 
     @staticmethod
-    def make_from_points_(args: dict):
+    def make_from_points_(inputs: dict):
         """ Returns line that goes through p1 and p2 """
-        p1 = args["p1"]
-        p2 = args["p2"]
+        p1 = inputs["p1"]
+        p2 = inputs["p2"]
 
         x1 = p1.x
         y1 = p1.y
@@ -177,7 +177,7 @@ class Line(GradientCarrier):
         # inputs, local_grads --> out_grads
 
         incoming_parameters = []
-        for input_name, input_obj in args.items():
+        for input_name, input_obj in inputs.items():
             incoming_parameters.extend(list(input_obj.grads.keys()))
         incoming_parameters = list(set(incoming_parameters))
 
@@ -187,7 +187,7 @@ class Line(GradientCarrier):
         own_parameters = [
             param
             for param in local_grads.keys()
-            if param not in args.keys() and param not in incoming_parameters
+            if param not in inputs.keys() and param not in incoming_parameters
         ]
 
         out_grads = {}
@@ -195,7 +195,7 @@ class Line(GradientCarrier):
             grads = []
 
             # If we have inputs that depended on parameters
-            for input_name, input_obj in args.items():
+            for input_name, input_obj in inputs.items():
                 # If one of the inputs doesn't depend on the parameter, we simply
                 # ignore it. No gradient information in there!
                 if param in input_obj.grads:
