@@ -161,12 +161,50 @@ class TestRotation(ut.TestCase):
 
 class TestLine(ut.TestCase):
     def test_from_points(self):
-        l = Scalar.Param("l", 1.0)
+        l = Scalar.Param("l", 2.0)
         theta = Scalar.Param("theta", np.radians(60))
 
         pt = Point(1, 1)
-        pt2 = translate(pt, Point(l, 2))
+        pt2 = translate(pt, Point(l, 0))
 
         line = Line.make_from_points(pt2, pt)
 
         assert np.shape(line.grads["l"]) == (2, 1)
+        assert line.b == 1
+        assert line.m == 0
+
+    def test_translation(self):
+        l = Scalar.Param("l", 2.0)
+        theta = Scalar.Param("theta", np.radians(60))
+
+        pt = Point(1, 1)
+        pt2 = translate(pt, Point(l, 0))
+
+        line = Line.make_from_points(pt2, pt)
+        line2 = line.translate(Vector(l, l))
+
+        assert line2.b == l.value + 1
+        assert line2.m == 0
+
+    def test_from_const(self):
+        line = Line(0.5, 0)
+
+        assert line.m == 0.5
+        assert line.b == 0
+
+        assert line.grads == {}
+
+    def test_from_params(self):
+        param_m = Scalar.Param("param_m", 0.5)
+        param_b = Scalar.Param("param_b", 0.5)
+
+        line = Line(param_m, param_b)
+
+        assert "param_m" in line.grads
+        assert "param_b" in line.grads
+
+        assert line.grads["param_m"].shape == (2, 1)
+        assert line.grads["param_b"].shape == (2, 1)
+
+        assert np.allclose(line.grads["param_m"], [[1], [0]])
+        assert np.allclose(line.grads["param_b"], [[0], [1]])

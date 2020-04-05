@@ -165,9 +165,17 @@ class Line(GradientCarrier):
 
     # TODO: Replace by better representation with no singularities
     def __init__(self, m, b):
-        self.m = m
-        self.b = b
         super().__init__()
+
+        m = Scalar(m)
+        b = Scalar(b)
+
+        inputs = {"m": m, "b": b}
+        local_grads = {"m": [[1], [0]], "b": [[0], [1]]}
+
+        self.m = m.value
+        self.b = b.value
+        self.gradients = update_grads(inputs, local_grads)
 
     @staticmethod
     def make_from_points(p1: Point, p2: Point):
@@ -218,7 +226,6 @@ class Line(GradientCarrier):
         local_grads = {}
         local_grads["p1"] = d_dpt1 = np.vstack([dm_dp1, db_dp1])
         local_grads["p2"] = d_dpt2 = np.vstack([dm_dp2, db_dp2])
-        local_grads["abc"] = [[0], [10]]
 
         new_line = Line(m, b).with_grads_from_previous(inputs, local_grads)
         return new_line
@@ -229,14 +236,23 @@ class Line(GradientCarrier):
         y = self.m * x + self.b
 
         ax.plot(x, y)
+    """
 
-    def translate(self, dx, dy):
-        new_line = copy.deepcopy(self)
-        new_line.b += dy
-        new_line.b -= new_line.m * dx
+    def translate(self, vec: Vector):
+        m = self.m
+        b = self.b + vec.y - self.m * vec.x
+
+        inputs = {"vec": vec, "m": self.m, "b": self.b}
+        grads = {}
+        grads["vec"] = [[0, 0], [-self.m, 1]]
+        grads["m"] = [[1], [0]]
+        grads["b"] = [[-vec.x], [1]]
+
+        new_line = Line(m, b).with_grads_from_previous(inputs, grads)
 
         return new_line
 
+    """
     def rotate_ccw(self, theta, pivot=None):
         if pivot is None:
             pivot = [0, 0]
