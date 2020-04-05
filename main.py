@@ -9,33 +9,6 @@ from numbers import Number
 from scipy import optimize  # type: ignore
 
 
-class Param:
-    def __init__(self, name, value):
-        self.name = name
-        self.value = value
-        self.factor = 1
-        self.power = 1
-
-    def __rmul__(self, other):
-        self_copy = copy.deepcopy(self)
-
-        if isinstance(other, Number):
-            self_copy.factor = other
-
-        return self_copy
-
-    def __repr__(self):
-        return "Param({}*{}^{}={})".format(
-            self.factor, self.name, self.power, self.value
-        )
-
-    def compute(self):
-        return self.factor * self.value ** self.power
-
-    def grad(self):
-        return self.factor * self.power * self.value ** (self.power - 1)
-
-
 def make_param(name, value):
     grads = {name: [[1.0]]}
     return Scalar(value).with_grads(grads)
@@ -365,14 +338,16 @@ def diffvec(p1, p2):
 
 
 def parametric_pt(l=2.0, theta=np.radians(60)):
-    l = Param("l", l)
-    theta = Param("theta", theta)
+    l = make_param("l", l)
+    theta = make_param("theta", theta)
 
     pt = Point(0, 0)
 
     # TODO: This vector has to have a gradient too, so `incoming_parameters` realizes
     # that there has been a parameter injected
-    pt2 = translate(pt, [l, 0])
+    pt2 = translate(pt, Vector(l, 0))
+
+    return pt2
     pt3 = rotate_param(pt2, pt, theta)
     pt4 = translate(pt3, [2 * l, 0])
 

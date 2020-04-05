@@ -5,7 +5,6 @@ from main import (
     rotate_param,
     diffvec,
     norm,
-    Param,
     Scalar,
     Point,
     Line,
