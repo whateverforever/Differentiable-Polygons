@@ -33,9 +33,12 @@ class TestParameter(ut.TestCase):
         assert isinstance(2 * l, Scalar)
         assert (2 * l).value == 4.0
 
-        pt = Point(0, 2 * l)
+        assert set((2 * l).grads.keys()) == {"l"}
+        assert (2 * l).grads["l"].shape == (1, 1)
+        assert np.isclose((2 * l).grads["l"], [[2.0]])
 
-        assert np.allclose(pt.grads["l"], [[0], [2.0]])
+        pt = Point(0, 2 * l)
+        assert np.allclose(pt.grads["l"], [[0.0], [2.0]])
 
 
 """

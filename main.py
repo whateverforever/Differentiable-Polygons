@@ -86,6 +86,26 @@ class Scalar(GradientCarrier):
     def __repr__(self):
         return "Scalar({:.4f})".format(self.value)
 
+    def __rmul__(self, other):
+        self_copy = copy.deepcopy(self)
+
+        other = Scalar(other)
+        inputs = {"other": other}
+        local_grads = {"other": self_copy.value}
+
+        # TODO: Inelegant, possibly not even correct
+        for key, grad in self_copy.gradients.items():
+            self_copy.gradients[key] = np.array(grad) * other.value
+
+        # Since a scalar can be a parameter. I.e. a source of gradient that doesn't
+        # stem from anywhere else, we need to inject our own gradients here.
+        # They won't come out of nowhere
+        local_grads.update(self_copy.gradients)
+
+        return Scalar(self_copy.value * other.value).with_grads_from_previous(
+            inputs, local_grads
+        )
+
     @staticmethod
     def from_point(pt):
         aa = Scalar(0)
