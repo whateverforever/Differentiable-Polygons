@@ -83,6 +83,9 @@ class Scalar(GradientCarrier):
     @staticmethod
     def Param(name, value):
         grads = {name: [[1.0]]}
+        # TODO: This is a bit too much all over the place. How to harmonize?
+        if isinstance(value, Scalar):
+            grads.update(value.grads)
         return Scalar(value).with_grads(grads)
 
 
