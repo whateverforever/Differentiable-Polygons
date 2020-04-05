@@ -39,6 +39,13 @@ class TestParameter(ut.TestCase):
         pt = Point(0, 2 * l)
         assert np.allclose(pt.grads["l"], [[0.0], [2.0]])
 
+    def test_recursive_params(self):
+        l = Scalar.Param("l", 2.0)
+        l2 = Scalar.Param("l2", 0.5 * l)
+
+        assert np.allclose(l2.grads["l2"], [[1]])
+        assert np.allclose(l2.grads["l"], [[0.5]])
+
 
 class TestIntegration(ut.TestCase):
     def test_TRT(self):
