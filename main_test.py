@@ -99,6 +99,36 @@ class TestTranslate(ut.TestCase):
         assert np.shape(pt2.grads["l"]) == (2, 1)
 
 
+class TestRotation(ut.TestCase):
+    def test_rotation(self):
+        pt1 = Point(2, 0)
+        origin = Point(0, 0)
+        angle = np.radians(45)
+
+        pt2 = rotate_param(pt1, origin, angle)
+
+        assert np.isclose(np.sqrt(2), pt2.x)
+        assert np.isclose(np.sqrt(2), pt2.y)
+
+    def test_rotation_parametric_angle(self):
+        pt1 = Point(2, 0)
+        origin = Point(0, 0)
+        angle_param = Scalar.Param("theta", np.radians(45))
+
+        pt2 = rotate_param(pt1, origin, angle_param)
+
+        assert pt2.grads["theta"].shape == (2, 1)
+
+    def test_rotation_parametric_pt(self):
+        pt1 = Point(Scalar.Param("l", 2.0), 0)
+        origin = Point(0, 0)
+        angle_param = np.radians(45)
+
+        pt2 = rotate_param(pt1, origin, angle_param)
+
+        assert pt2.grads["l"].shape == (2, 1)
+
+
 class TestLine(ut.TestCase):
     def test_from_points(self):
         l = Scalar.Param("l", 1.0)
