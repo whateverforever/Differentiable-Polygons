@@ -6,6 +6,7 @@ from main import (
     diffvec,
     norm,
     Param,
+    Scalar,
     Point,
     Line,
     make_param,
@@ -17,15 +18,23 @@ class TestParameter(ut.TestCase):
         l = make_param("l", 2.0)
 
         assert "l" in l.grads
-        assert np.isclose(l.grads["l"], [[2.0]])
+        assert np.isclose(l.grads["l"], [[1.0]])
 
     def test_param_and_point(self):
-        print(">> Shoop di woop")
         l = make_param("l", 2.0)
-
         pt = Point(0, l)
 
         assert "l" in pt.grads
+        assert np.allclose(pt.grads["l"], [[0], [1.0]])
+
+    def test_multiplied_param(self):
+        l = make_param("l", 2.0)
+
+        assert isinstance(2 * l, Scalar)
+        assert (2 * l).value == 4.0
+
+        pt = Point(0, 2 * l)
+
         assert np.allclose(pt.grads["l"], [[0], [2.0]])
 
 
@@ -74,6 +83,7 @@ class TestOverall(ut.TestCase):
         length_reached, _ = parametric_pt(*res.x)
 
         assert np.isclose(length_reached.value, 0)
+"""
 
 
 class TestTranslate(ut.TestCase):

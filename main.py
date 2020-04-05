@@ -37,7 +37,7 @@ class Param:
 
 
 def make_param(name, value):
-    grads = {name: [[value]]}
+    grads = {name: [[1.0]]}
     return Scalar(value).with_grads(grads)
 
 
