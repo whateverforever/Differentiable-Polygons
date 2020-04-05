@@ -243,12 +243,14 @@ class Line(GradientCarrier):
         return new_line
 
     def translate(self, vec: Vector):
-        m = self.m
-        b = self.b + vec.y - self.m * vec.x
+        line_old = copy.deepcopy(self)
 
-        inputs = {"vec": vec, "line": self}
+        m = line_old.m
+        b = line_old.b + vec.y - line_old.m * vec.x
+
+        inputs = {"vec": vec, "line": line_old}
         grads = {}
-        grads["vec"] = [[0, 0], [-self.m, 1]]
+        grads["vec"] = [[0, 0], [-line_old.m, 1]]
         grads["line"] = [[1, 0], [-vec.x, 1]]
 
         new_line = Line(m, b).with_grads_from_previous(inputs, grads)
@@ -282,8 +284,8 @@ class Line(GradientCarrier):
         inputs = {"theta": theta, "pivot": pivot, "line_centered": line_centered}
 
         rotated_line = Line(m2, b).with_grads_from_previous(inputs, local_grads)
-        print("rotted line", rotated_line.grads)
-        new_line = rotated_line.translate(pivot)  # TODO: loses theta gradient?
+
+        new_line = rotated_line.translate(pivot)
 
         return new_line
 

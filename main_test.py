@@ -173,6 +173,8 @@ class TestLine(ut.TestCase):
         assert line.b == 1
         assert line.m == 0
 
+        # TODO: Check grad values
+
     def test_rotation(self):
         line = Line(0, 0)
         theta = Scalar.Param("theta", np.radians(45))
@@ -197,6 +199,7 @@ class TestLine(ut.TestCase):
         assert line2.m == 0
 
         assert "l" in line2.grads
+        # TODO: Check grad values
 
     def test_from_const(self):
         line = Line(0.5, 0)
