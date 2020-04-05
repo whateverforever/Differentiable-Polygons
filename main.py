@@ -282,14 +282,17 @@ def norm(pt: Point):
     return length
 
 
-def rotate_param(pt, origin, angle_param):
+def rotate_param(pt: Point, origin: Point, angle_param: Scalar):
+    # TODO: Same for points, coercion
+    angle_param = Scalar(angle_param)
+
     x1 = pt.x
     y1 = pt.y
 
     ox = origin.x
     oy = origin.y
 
-    angle = angle_param.compute()
+    angle = angle_param.value
 
     x2 = (x1 - ox) * np.cos(angle) - (y1 - oy) * np.sin(angle) + ox
     y2 = (x1 - ox) * np.sin(angle) + (y1 - oy) * np.cos(angle) + oy
@@ -304,15 +307,16 @@ def rotate_param(pt, origin, angle_param):
         [(x1 - ox) * np.cos(angle) + (y1 - oy) * (-np.sin(angle))],
     ]
 
+    inputs = {"pt": pt, "origin": origin, "angle": angle_param}
+
     _grads = {}
-    _grads[angle_param.name] = dangle
-    _grads["d_dprevpt"] = np.array(
+    _grads["angle"] = dangle
+    _grads["origin"] = dorigin
+    _grads["pt"] = np.array(
         [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]
     )
 
-    pt2 = pt.update_grads(_grads)
-    pt2.x = x2
-    pt2.y = y2
+    pt2 = Point(x2, y2).with_grads_from_previous(inputs, _grads)
 
     return pt2
 
