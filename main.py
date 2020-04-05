@@ -97,9 +97,17 @@ class Scalar(GradientCarrier):
 
 class Point(GradientCarrier):
     def __init__(self, x, y):
-        self.x = x
-        self.y = y
         super().__init__()
+
+        x = Scalar(x)
+        y = Scalar(y)
+
+        inputs = {"x": x, "y": y}
+        local_grads = {"x": [[1], [0]], "y": [[0], [1]]}
+
+        self.x = x.value
+        self.y = y.value
+        self.gradients = update_grads(inputs, local_grads)
 
     def __repr__(self):
         return "Pt({:.4f},{:.4f})".format(self.x, self.y)
