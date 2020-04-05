@@ -230,6 +230,51 @@ class Line(GradientCarrier):
         new_line = Line(m, b).with_grads_from_previous(inputs, local_grads)
         return new_line
 
+    def translate(self, vec: Vector):
+        m = self.m
+        b = self.b + vec.y - self.m * vec.x
+
+        inputs = {"vec": vec, "line": self}
+        grads = {}
+        grads["vec"] = [[0, 0], [-self.m, 1]]
+        grads["line"] = [[1, 0], [-vec.x, 1]]
+
+        new_line = Line(m, b).with_grads_from_previous(inputs, grads)
+
+        return new_line
+
+    def rotate_ccw(self, theta: Scalar, pivot: Point = None):
+        if pivot is None:
+            pivot = Point(0, 0)
+
+        line_centered = self.translate(-pivot)
+
+        m = line_centered.m
+        b = line_centered.b
+
+        m2 = np.tan(np.arctan(m) + theta.value)
+        b2 = b
+
+        sec = lambda x: 1 / np.cos(x)
+
+        local_grads = {}
+        local_grads["theta"] = [
+            [sec(theta.value + np.arctan(m)) ** 2],
+            [0],
+        ]
+        local_grads["line_centered"] = [
+            [sec(theta.value + np.arctan(m) ** 2) / (1 + m ** 2), 0],
+            [0, 1],
+        ]
+
+        inputs = {"theta": theta, "pivot": pivot, "line_centered": line_centered}
+
+        rotated_line = Line(m2, b).with_grads_from_previous(inputs, local_grads)
+        print("rotted line", rotated_line.grads)
+        new_line = rotated_line.translate(pivot)  # TODO: loses theta gradient?
+
+        return new_line
+
     """
     def plot(self, ax=plt, lims=(-20, 20, 10)):
         x = np.linspace(*lims)
@@ -238,32 +283,7 @@ class Line(GradientCarrier):
         ax.plot(x, y)
     """
 
-    def translate(self, vec: Vector):
-        m = self.m
-        b = self.b + vec.y - self.m * vec.x
-
-        inputs = {"vec": vec, "m": self.m, "b": self.b}
-        grads = {}
-        grads["vec"] = [[0, 0], [-self.m, 1]]
-        grads["m"] = [[1], [0]]
-        grads["b"] = [[-vec.x], [1]]
-
-        new_line = Line(m, b).with_grads_from_previous(inputs, grads)
-
-        return new_line
-
     """
-    def rotate_ccw(self, theta, pivot=None):
-        if pivot is None:
-            pivot = [0, 0]
-
-        new_line = copy.deepcopy(self)
-        new_line = new_line.translate(-pivot[0], -pivot[1])
-        new_line.m = np.tan(np.arctan(new_line.m) + theta)
-        new_line = new_line.translate(pivot[0], pivot[1])
-
-        return new_line
-
     def intersect(self, other_line):
         x = (other_line.b - self.b) / (self.m - other_line.m)
         y = self.m * x + self.b
