@@ -119,10 +119,8 @@ def update_grads(
         if not isinstance(input_obj, GradientCarrier):
             continue
 
-        print("Input obj {} and its grads {}".format(input_obj, input_obj.grads.keys()))
         incoming_parameters.extend(list(input_obj.grads.keys()))
     incoming_parameters = list(set(incoming_parameters))
-    print("Incoming parameters:", incoming_parameters)
 
     # Parameters that previous operations don't know anything about
     # I.e. maybe we did translations on `l` before, and now a rotation
@@ -175,7 +173,7 @@ class Line(GradientCarrier):
         return Line.make_from_points_({"p1": p1, "p2": p2})
 
     @staticmethod
-    def make_from_points_(inputs: dict):
+    def make_from_points_(inputs: ty.Dict[str, Point]):
         """ Returns line that goes through p1 and p2 """
         p1 = inputs["p1"]
         p2 = inputs["p2"]
