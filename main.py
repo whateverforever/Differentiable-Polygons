@@ -36,6 +36,11 @@ class Param:
         return self.factor * self.power * self.value ** (self.power - 1)
 
 
+def make_param(name, value):
+    grads = {name: [[value]]}
+    return Scalar(value).with_grads(grads)
+
+
 class GradientCarrier:
     def __init__(self):
         self.gradients = {}
@@ -44,50 +49,39 @@ class GradientCarrier:
     def grads(self):
         return copy.deepcopy(self.gradients)
 
-    def with_gradients(self, grads):
+    def with_grads(self, grads):
         self_copy = copy.deepcopy(self)
-
         assert self_copy.gradients == {}
-        self_copy.gradients = grads
 
+        self_copy.gradients = grads
         return self_copy
 
-    def update_grads(self, new_grads):
+    def with_grads_from_previous(self, inputs, local_grads):
         """
-        Chains new gradients onto the current ones
+        Takes the inputs into the function and the local gradients that matter
+        inside of the function, calculates the new gradients wrt. to the original parameters
+        (by utilizing the local gradients like dself_dprevpt or dself_dparam).
+
+        returns: an instance of this particular GradientCarrier with the gradient set
         """
-        new_scalar = copy.deepcopy(self)
-        old_grads = new_scalar.gradients
-        updated_grads = {}
+        self_copy = copy.deepcopy(self)
+        assert self_copy.gradients == {}
 
-        incoming_params = set(old_grads.keys()).union(set(new_grads.keys()))
-
-        for param in incoming_params:
-            if param == "d_dprevpt":
-                continue
-
-            # we already have a trace to this parameter
-            if param in old_grads:
-                # we take our gradient towards last point
-                # and the gradient of old point towards parameter
-                # d_dl = d_dprev @ dprev_dl
-                updated_grads[param] = (
-                    np.array(new_grads["d_dprevpt"]) @ old_grads[param]
-                )
-
-            # we don't have a trace yet, meaning we start one
-            else:
-                # d_dl = XXX
-                updated_grads[param] = new_grads[param]
-
-        new_scalar.gradients = updated_grads
-        return new_scalar
+        self_copy.gradients = update_grads(inputs, local_grads)
+        return self_copy
 
 
 class Scalar(GradientCarrier):
     def __init__(self, value):
-        self.value = value
         super().__init__()
+
+        # TODO: Change, inelegant. Lookup how coercion is usually done
+        if isinstance(value, Scalar):
+            self.value = value.value
+            self.gradients = value.gradients
+            return
+
+        self.value = value
 
     def __repr__(self):
         return "Scalar({:.4f})".format(self.value)

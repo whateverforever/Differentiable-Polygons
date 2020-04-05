@@ -8,9 +8,28 @@ from main import (
     Param,
     Point,
     Line,
+    make_param,
 )  # type:ignore
 
 
+class TestParameter(ut.TestCase):
+    def test_make_param(self):
+        l = make_param("l", 2.0)
+
+        assert "l" in l.grads
+        assert np.isclose(l.grads["l"], [[2.0]])
+
+    def test_param_and_point(self):
+        print(">> Shoop di woop")
+        l = make_param("l", 2.0)
+
+        pt = Point(0, l)
+
+        assert "l" in pt.grads
+        assert np.allclose(pt.grads["l"], [[0], [2.0]])
+
+
+"""
 class TestOverall(ut.TestCase):
     def test_norm_optimization(self):
         from scipy import optimize  # type: ignore
