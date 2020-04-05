@@ -108,6 +108,58 @@ class Point(GradientCarrier):
 Vector = Point
 
 
+def update_grads(
+    inputs: ty.Dict[str, GradientCarrier],
+    local_grads: ty.Dict[str, ty.Union[ty.List[Number], np.ndarray]],
+):
+    incoming_parameters = []
+    for input_name, input_obj in inputs.items():
+        # TODO: Can We get rid of this? Maybe if everything is coerced into GradientCarrier
+        if not isinstance(input_obj, GradientCarrier):
+            continue
+
+        print("Input obj {} and its grads {}".format(input_obj, input_obj.grads.keys()))
+        incoming_parameters.extend(list(input_obj.grads.keys()))
+    incoming_parameters = list(set(incoming_parameters))
+    print("Incoming parameters:", incoming_parameters)
+
+    # Parameters that previous operations don't know anything about
+    # I.e. maybe we did translations on `l` before, and now a rotation
+    # on new parameter `theta`
+    own_parameters = [
+        param
+        for param in local_grads.keys()
+        if param not in inputs.keys() and param not in incoming_parameters
+    ]
+
+    out_grads = {}
+    for param in incoming_parameters + own_parameters:
+        grads = []
+
+        # If we have inputs that depended on parameters
+        for input_name, input_obj in inputs.items():
+            # TODO: Same as above
+            if not isinstance(input_obj, GradientCarrier):
+                continue
+            # If one of the inputs doesn't depend on the parameter, we simply
+            # ignore it. No gradient information in there!
+            if param in input_obj.grads:
+                dself_dinput = np.array(local_grads[input_name])
+                dinput_dparam = np.array(input_obj.grads[param])
+
+                grads.append(dself_dinput @ dinput_dparam)
+
+        # If we got directly injected a parameter as input (i.e. rotate(pt, theta))
+        # Might be unnecessary, depending on how injections are handled
+        if param in local_grads:
+            dself_dparam = local_grads[param]
+
+            grads.append(dself_dparam)
+
+        out_grads[param] = np.sum(grads, axis=0)
+    return out_grads
+
+
 class Line(GradientCarrier):
     """ Simple class representing a line, used to construct the unit cell """
 
@@ -168,51 +220,7 @@ class Line(GradientCarrier):
         local_grads["p2"] = d_dpt2 = np.vstack([dm_dp2, db_dp2])
         local_grads["abc"] = [[0], [10]]
 
-        # the signature for the following gradient computation:
-        # inputs, local_grads --> out_grads
-
-        incoming_parameters = []
-        for input_name, input_obj in inputs.items():
-            incoming_parameters.extend(list(input_obj.grads.keys()))
-        incoming_parameters = list(set(incoming_parameters))
-
-        # Parameters that previous operations don't know anything about
-        # I.e. maybe we did translations on `l` before, and now a rotation
-        # on new parameter `theta`
-        own_parameters = [
-            param
-            for param in local_grads.keys()
-            if param not in inputs.keys() and param not in incoming_parameters
-        ]
-
-        out_grads = {}
-        for param in incoming_parameters + own_parameters:
-            grads = []
-
-            # If we have inputs that depended on parameters
-            for input_name, input_obj in inputs.items():
-                # If one of the inputs doesn't depend on the parameter, we simply
-                # ignore it. No gradient information in there!
-                if param in input_obj.grads:
-                    dself_dinput = local_grads[input_name]
-                    dinput_dparam = input_obj.grads[param]
-
-                    grads.append(dself_dinput @ dinput_dparam)
-
-            # If we got directly injected a parameter as input (i.e. rotate(pt, theta))
-            # Might be unnecessary, depending on how injections are handled
-            if param in local_grads:
-                dself_dparam = local_grads[param]
-
-                grads.append(dself_dparam)
-
-            out_grads[param] = np.sum(grads, axis=0)
-
-        new_line = Line(m, b).with_gradients(out_grads)
-        # new_line.gradients = out_grads
-
-        print("Gradients:", new_line.grads)
-
+        new_line = Line(m, b).with_grads_from_previous(inputs, local_grads)
         return new_line
 
     """
