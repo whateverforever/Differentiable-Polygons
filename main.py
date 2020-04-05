@@ -322,16 +322,15 @@ def rotate_param(pt, origin, angle_param):
     return pt2
 
 
-def diffvec(p1, p2):
+def diffvec(p1: Point, p2: Point):
     diff_vec = [p1.x - p2.x, p1.y - p2.y]
 
+    inputs = {"p1": p1, "p2": p2}
     _grads = {}
-    _grads["d_dprevpt"] = np.array([[1, 0], [0, 1]])
+    _grads["p1"] = np.array([[1, 0], [0, 1]])
+    _grads["p2"] = np.array([[-1, 0], [0, -1]])
 
-    pt_new = p1.update_grads(_grads)
-    pt_new.x = diff_vec[0]
-    pt_new.y = diff_vec[1]
-
+    pt_new = Point(*diff_vec).with_grads_from_previous(inputs, _grads)
     return pt_new
 
 
