@@ -267,23 +267,18 @@ def translate(pt: Point, vec: Point):
     return pt2
 
 
-def norm(pt):
-    params = list(pt.grads.keys())
-
+def norm(pt: Point):
     l2_norm = np.sqrt(pt.x ** 2 + pt.y ** 2)
 
     grad_pt = [
         [pt.x / np.sqrt(pt.x ** 2 + pt.y ** 2), pt.y / np.sqrt(pt.x ** 2 + pt.y ** 2)]
     ]
 
-    grads = {}
-    grads["d_dprevpt"] = grad_pt
+    inputs = {"pt": pt}
+    _grads = {}
+    _grads["pt"] = grad_pt
 
-    # TODO: Point isnt the right class. Should Differentiable or Scalar or Thing or sth
-    length = Scalar.from_point(pt)  # pt.update_grads(grads)
-    length = length.update_grads(grads)
-    length.value = l2_norm
-
+    length = Scalar(l2_norm).with_grads_from_previous(inputs, _grads)
     return length
 
 
