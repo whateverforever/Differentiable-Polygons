@@ -418,7 +418,7 @@ def main():
 
     # with jac: succ, nfev=74, nit=8
     # without jac: no succ, nfev=252, nit=7
-    res = optimize.minimize(f, x0, method="BFGS", jac=jac, callback=reporter)
+    res = optimize.minimize(f, x0, method="CG", jac=jac, callback=reporter)
     length_reached, _ = parametric_pt(*res.x)
 
     xs = np.array(xs)
@@ -433,7 +433,8 @@ def main():
         for iy, y in enumerate(np.linspace(np.min(xs[:, 1]), np.max(xs[:, 1]), 50)):
             z = f([x, y])
             zzs[ix, iy] = z
-    axes[0].contourf(xxs, yys, zzs, levels=50)
+
+    a = axes[0].contourf(xxs, yys, zzs, levels=50)
     axes[0].plot(xs[:, 0], xs[:, 1], "-o")
     axes[0].set_title("Solution Space")
     axes[0].set_xlabel("l")
@@ -444,6 +445,7 @@ def main():
     axes[1].set_ylabel("Objective Fun.")
     axes[1].set_xlabel("Iteration #")
 
+    plt.colorbar(a)
     plt.tight_layout()
     plt.show()
 
@@ -452,7 +454,7 @@ def main():
     print("x final: {}".format(res.x))
 
     print("Initial distance: {}".format(f(x0)))
-    print("Final   distance: {}".format(length_reached))
+    print("Final   distance: {}".format(length_reached.value))
 
 
 if __name__ == "__main__":
