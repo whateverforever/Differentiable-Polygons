@@ -19,8 +19,6 @@ class GradientCarrier:
 
     def with_grads(self, grads):
         self_copy = copy.deepcopy(self)
-        assert self_copy.gradients == {}
-
         self_copy.gradients = grads
         return self_copy
 
