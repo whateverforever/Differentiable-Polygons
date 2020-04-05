@@ -173,9 +173,19 @@ class TestLine(ut.TestCase):
         assert line.b == 1
         assert line.m == 0
 
+    def test_rotation(self):
+        line = Line(0, 0)
+        theta = Scalar.Param("theta", np.radians(45))
+
+        line2 = line.rotate_ccw(theta)
+
+        assert np.isclose(line2.m, 1)
+
+        assert "theta" in line2.grads
+        # TODO: Check grad values
+
     def test_translation(self):
         l = Scalar.Param("l", 2.0)
-        theta = Scalar.Param("theta", np.radians(60))
 
         pt = Point(1, 1)
         pt2 = translate(pt, Point(l, 0))
@@ -185,6 +195,8 @@ class TestLine(ut.TestCase):
 
         assert line2.b == l.value + 1
         assert line2.m == 0
+
+        assert "l" in line2.grads
 
     def test_from_const(self):
         line = Line(0.5, 0)
