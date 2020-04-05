@@ -43,6 +43,14 @@ class GradientCarrier:
     def grads(self):
         return copy.deepcopy(self.gradients)
 
+    def with_gradients(self, grads):
+        self_copy = copy.deepcopy(self)
+
+        assert self_copy.gradients == {}
+        self_copy.gradients = grads
+
+        return self_copy
+
     def update_grads(self, new_grads):
         """
         Chains new gradients onto the current ones
@@ -197,6 +205,7 @@ class Line(GradientCarrier):
                     grads.append(dself_dinput @ dinput_dparam)
 
             # If we got directly injected a parameter as input (i.e. rotate(pt, theta))
+            # Might be unnecessary, depending on how injections are handled
             if param in local_grads:
                 dself_dparam = local_grads[param]
 
@@ -204,8 +213,8 @@ class Line(GradientCarrier):
 
             out_grads[param] = np.sum(grads, axis=0)
 
-        new_line = Line(m, b)
-        new_line.gradients = out_grads
+        new_line = Line(m, b).with_gradients(out_grads)
+        # new_line.gradients = out_grads
 
         print("Gradients:", new_line.grads)
 
