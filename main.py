@@ -375,15 +375,11 @@ def parametric_pt(l=2.0, theta=np.radians(60)):
     theta = Scalar.Param("theta", theta)
 
     pt = Point(0, 0)
-
-    # TODO: This vector has to have a gradient too, so `incoming_parameters` realizes
-    # that there has been a parameter injected
     pt2 = translate(pt, Vector(l, 0))
     pt3 = rotate_param(pt2, pt, theta)
     pt4 = translate(pt3, Vector(2 * l, 0))
 
     diff_vec = diffvec(pt4, Point(8, 2))
-
     length = norm(diff_vec)
 
     return length, length.grads
