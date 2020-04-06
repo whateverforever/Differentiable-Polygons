@@ -9,7 +9,34 @@ from main import (
     Point,
     Vector,
     Line,
+    update_grads,
 )  # type:ignore
+
+
+class TestCore(ut.TestCase):
+    def test_update_grads(self):
+        l = a = Scalar.Param("l", 2.0)
+
+        b = a.value ** 2 + 1.2 * l.value
+
+        inputs = {"a": a}
+        db_dinputs = {"a": [[2 * a.value]], "l": [[1.2]]}
+        b = Scalar(b).with_grads_from_previous(inputs, db_dinputs)
+        db_dparams = update_grads(inputs, db_dinputs)
+
+        assert np.allclose(db_dparams["l"], [[2 * a.value + 1.2]])
+
+        c = b.value ** 2 + a.value ** 2 + np.cos(l.value)
+        inputs = {"a": a, "b": b}
+        dc_dinputs = {"a": [[2 * a.value]], "b": [[2 * b.value]], "l": -np.sin(l.value)}
+        c = Scalar(c).with_grads_from_previous(inputs, dc_dinputs)
+
+        dc_dparams = update_grads(inputs, dc_dinputs)
+
+        assert np.allclose(
+            dc_dparams["l"],
+            [[2 * b.value * (2 * l.value + 1.2) + 2 * a.value * 1 - np.sin(l.value)]],
+        )
 
 
 class TestParameter(ut.TestCase):
