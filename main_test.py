@@ -1,4 +1,8 @@
 import unittest as ut
+
+from hypothesis import given, reject
+from hypothesis.strategies import integers, text, floats
+
 import numpy as np  # type:ignore
 from main import (
     translate,
@@ -11,6 +15,8 @@ from main import (
     Line,
     update_grads,
 )  # type:ignore
+
+sane_floats = floats(allow_infinity=False, allow_nan=False)
 
 
 class TestCore(ut.TestCase):
@@ -146,31 +152,22 @@ class TestIntegration(ut.TestCase):
 
 
 class TestPoint(ut.TestCase):
-    def test_diffvec(self):
-        x1 = 1.2
-        y1 = 2.3
-
-        x2 = 3.4
-        y2 = 4.5
-
+    @given(sane_floats, sane_floats, sane_floats, sane_floats)
+    def test_diffvec(self, x1, y1, x2, y2):
         diff_vec = diffvec(Point(x1, y1), Point(x2, y2))
 
         assert diff_vec.x == x1 - x2
         assert diff_vec.y == y1 - y2
 
-    def test_diffvec_param(self):
-        x1 = Scalar.Param("x1", 1.2)
-        y1 = Scalar.Param("y1", 2.3)
+    @given(sane_floats, sane_floats, sane_floats, sane_floats)
+    def test_diffvec_param(self, x1, y1, x2, y2):
+        x1 = Scalar.Param("x1", x1)
+        y1 = Scalar.Param("y1", y1)
 
-        x2 = Scalar.Param("x2", 3.4)
-        y2 = Scalar.Param("y2", 4.5)
+        x2 = Scalar.Param("x2", x2)
+        y2 = Scalar.Param("y2", y2)
 
         diff_vec = diffvec(Point(x1, y1), Point(x2, y2))
-
-        assert "x1" in diff_vec.grads
-        assert "y1" in diff_vec.grads
-        assert "x2" in diff_vec.grads
-        assert "y2" in diff_vec.grads
 
         assert np.allclose(diff_vec.grads["x1"], [[1], [0]])
         assert np.allclose(diff_vec.grads["y1"], [[0], [1]])
@@ -197,8 +194,8 @@ class TestPoint(ut.TestCase):
         assert np.isclose(np.sqrt(2), pt2.x)
         assert np.isclose(np.sqrt(2), pt2.y)
 
-    def test_rotation_parametric_angle(self):
-        angle = np.radians(45)
+    @given(sane_floats)
+    def test_rotation_parametric_angle(self, angle):
         theta = Scalar.Param("theta", angle)
 
         origin = Point(0, 0)
@@ -206,20 +203,15 @@ class TestPoint(ut.TestCase):
         pt2 = rotate(pt1, origin, theta)
 
         assert pt2.grads["theta"].shape == (2, 1)
-        assert np.allclose(pt2.grads["theta"], [[-np.sqrt(2)], [np.sqrt(2)]])
-
-        angle2 = np.radians(13)
-        theta2 = Scalar.Param("theta", angle2)
-        pt3 = rotate(pt1, origin, theta2)
-
         assert np.allclose(
-            pt3.grads["theta"], [[-2 * np.sin(angle2)], [2 * np.cos(angle2)]],
+            pt2.grads["theta"], [[-2 * np.sin(angle)], [2 * np.cos(angle)]],
         )
 
-    def test_rotation_parametric_pt(self):
+    @given(sane_floats, sane_floats)
+    def test_rotation_parametric_pt(self, l, angle):
         # TODO replace random with Hypothesis
-        l = Scalar.Param("l", np.random.uniform(0, 4.0))
-        angle = np.radians(np.random.uniform(0, 90))
+        l = Scalar.Param("l", l)
+        angle = np.radians(angle)
         theta = Scalar.Param("theta", angle)
 
         pt1 = Point(l, 0)
