@@ -79,14 +79,6 @@ class Scalar(GradientCarrier):
         )
 
     @staticmethod
-    def from_point(pt):
-        aa = Scalar(0)
-        aa.value = pt.x
-        aa.gradients = copy.deepcopy(pt.gradients)
-
-        return aa
-
-    @staticmethod
     def Param(name, value):
         grads = {name: [[1.0]]}
         # TODO: This is a bit too much all over the place. How to harmonize?
