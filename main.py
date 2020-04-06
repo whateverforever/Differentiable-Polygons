@@ -325,18 +325,17 @@ def translate(pt: Point, vec: Point):
 
 
 def norm(pt: Point):
-    l2_norm = np.sqrt(pt.x ** 2 + pt.y ** 2)
+    eps = 1e-13
 
-    grad_pt = [
-        [pt.x / np.sqrt(pt.x ** 2 + pt.y ** 2), pt.y / np.sqrt(pt.x ** 2 + pt.y ** 2)]
-    ]
+    l2_norm = np.sqrt(eps + pt.x ** 2 + pt.y ** 2)
+
+    grad_pt = [[pt.x / l2_norm, pt.y / l2_norm]]
 
     inputs = {"pt": pt}
     _grads = {}
     _grads["pt"] = grad_pt
 
-    length = Scalar(l2_norm).with_grads_from_previous(inputs, _grads)
-    return length
+    return Scalar(l2_norm).with_grads_from_previous(inputs, _grads)
 
 
 def rotate(pt: Point, origin: Point, angle_param: Scalar):
