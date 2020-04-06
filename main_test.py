@@ -145,19 +145,48 @@ class TestIntegration(ut.TestCase):
         assert res.success == True
 
 
-class TestTranslate(ut.TestCase):
+class TestPoint(ut.TestCase):
+    def test_diffvec(self):
+        x1 = 1.2
+        y1 = 2.3
+
+        x2 = 3.4
+        y2 = 4.5
+
+        diff_vec = diffvec(Point(x1, y1), Point(x2, y2))
+
+        assert diff_vec.x == x1 - x2
+        assert diff_vec.y == y1 - y2
+
+    def test_diffvec_param(self):
+        x1 = Scalar.Param("x1", 1.2)
+        y1 = Scalar.Param("y1", 2.3)
+
+        x2 = Scalar.Param("x2", 3.4)
+        y2 = Scalar.Param("y2", 4.5)
+
+        diff_vec = diffvec(Point(x1, y1), Point(x2, y2))
+
+        assert "x1" in diff_vec.grads
+        assert "y1" in diff_vec.grads
+        assert "x2" in diff_vec.grads
+        assert "y2" in diff_vec.grads
+
+        assert np.allclose(diff_vec.grads["x1"], [[1], [0]])
+        assert np.allclose(diff_vec.grads["y1"], [[0], [1]])
+        assert np.allclose(diff_vec.grads["x2"], [[-1], [0]])
+        assert np.allclose(diff_vec.grads["y2"], [[0], [-1]])
+
     def test_parameter_translate(self):
-        l = Scalar.Param("l", 1.0)
-        theta = Scalar.Param("theta", np.radians(60))
+        l = Scalar.Param("l", 3.0)
 
         pt = Point(0, 0)
         pt2 = translate(pt, Point(l, 0))
 
         assert pt2.x == l.value
         assert np.shape(pt2.grads["l"]) == (2, 1)
+        assert np.allclose(pt2.grads["l"], [[1], [0]])
 
-
-class TestRotation(ut.TestCase):
     def test_rotation(self):
         pt1 = Point(2, 0)
         origin = Point(0, 0)
