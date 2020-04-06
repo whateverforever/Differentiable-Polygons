@@ -295,19 +295,43 @@ class Line(GradientCarrier):
 
         return new_line
 
+    def intersect(self, other_line) -> Point:
+        m1 = self.m
+        b1 = self.b
+
+        m2 = other_line.m
+        b2 = other_line.b
+
+        x = (b2 - b1) / (m1 - m2)
+        y = m1 * x + b1
+
+        # dx_dline meaning [dx_dm, dx_db]
+        dx_dline1 = [[-((-b1 + b2) / (m1 - m2) ** 2), -(1 / (m1 - m2))]]
+        dx_dline2 = [[(-b1 + b2) / (m1 - m2) ** 2, 1 / (m1 - m2)]]
+
+        dy_dline1 = [
+            [
+                -(((-b1 + b2) * m1) / (m1 - m2) ** 2) + (-b1 + b2) / (m1 - m2),
+                1 - m1 / (m1 - m2),
+            ]
+        ]
+        dy_dline2 = [[((-b1 + b2) * m1) / (m1 - m2) ** 2, m1 / (m1 - m2)]]
+
+        inputs = {"other_line": other_line}
+        local_grads = {
+            "other_line": np.vstack(
+                [np.hstack([dx_dline1, dx_dline2]), np.hstack([dy_dline1, dy_dline2])]
+            )
+        }
+
+        return Point(x, y).with_grads_from_previous(inputs, local_grads)
+
     """
     def plot(self, ax=plt, lims=(-20, 20, 10)):
         x = np.linspace(*lims)
         y = self.m * x + self.b
 
         ax.plot(x, y)
-    """
-
-    """
-    def intersect(self, other_line):
-        x = (other_line.b - self.b) / (self.m - other_line.m)
-        y = self.m * x + self.b
-        return np.array((x, y))
     """
 
 

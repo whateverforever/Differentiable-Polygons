@@ -297,3 +297,12 @@ class TestLine(ut.TestCase):
 
         assert np.allclose(line.grads["param_m"], [[1], [0]])
         assert np.allclose(line.grads["param_b"], [[0], [1]])
+
+    def test_intersection(self):
+        line1 = Line.make_from_points(Point(0, 1), Point(1, 2))
+        line2 = Line.make_from_points(Point(4, 0), Point(3, 2))
+
+        intersect = line1.intersect(line2)
+
+        assert np.isclose(intersect.x, 2.33333)
+        assert np.isclose(intersect.y, 3.33333)
