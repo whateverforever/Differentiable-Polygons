@@ -463,7 +463,13 @@ def main():
     axes[1].set_ylabel("Objective Fun.")
     axes[1].set_xlabel("Iteration #")
 
-    plt.colorbar(a)
+    print("Example jacobian of beginning: {}, end: {}".format(jac(xs[0]), jac(xs[-1])))
+
+    axes[2].plot(range(len(xs)), [jac(x)[1] for x in xs])
+    axes[2].set_title("Infty Norm of Jacobian")
+    axes[2].set_ylabel("Norm of Jac.")
+    axes[2].set_xlabel("Iteration #")
+
     plt.tight_layout()
     plt.show()
 
@@ -471,8 +477,21 @@ def main():
     print("x initial: {}".format(x0))
     print("x final: {}".format(res.x))
 
+    print("Jac at 2.9/0.6: {}".format(jac([2.9, 0.6])))
+
     print("Initial distance: {}".format(f(x0)))
-    print("Final   distance: {}".format(length_reached.value))
+    print(
+        "Final   distance: {}, gradient norm: l={:.2f}, theta={:.2f}".format(
+            length_reached.value,
+            np.linalg.norm(length_reached.grads["l"]),
+            np.linalg.norm(length_reached.grads["theta"]),
+        )
+    )
+    print("Jac at goal", jac(res.x))
+
+    # TODO: Gradient norms wayyyy to large (norm d_dl=2.48 and norm d_dtheta=2.46)
+    # Problem appears when I rotate a parametrized vector. Gradients are zero at minimum,
+    # if I rotate fixed vec, and afterwards translate by parameter
 
 
 if __name__ == "__main__":
