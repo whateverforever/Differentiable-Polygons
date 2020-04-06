@@ -423,7 +423,7 @@ def main():
         # print("grad={}, norm={}".format(np.squeeze(grads), np.linalg.norm(np.squeeze(grads))))
         return np.squeeze(grads)
 
-    x0 = [2.0, np.radians(60)]
+    x0 = [1.0, np.radians(10)]
     xs = []
 
     def reporter(xk):
