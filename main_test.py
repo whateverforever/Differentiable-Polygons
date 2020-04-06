@@ -2,7 +2,7 @@ import unittest as ut
 import numpy as np  # type:ignore
 from main import (
     translate,
-    rotate_param,
+    rotate,
     diffvec,
     norm,
     Scalar,
@@ -57,7 +57,7 @@ class TestIntegration(ut.TestCase):
 
         pt = Point(0, 0)
         pt2 = translate(pt, Vector(l, 0))
-        pt3 = rotate_param(pt2, pt, theta)
+        pt3 = rotate(pt2, pt, theta)
         pt4 = translate(pt3, Vector(0, 0.5 * l))
         pt5 = translate(pt4, Vector(4 * l2, 0))
 
@@ -83,7 +83,7 @@ class TestIntegration(ut.TestCase):
 
             pt = Point(0, 0)
             pt2 = translate(pt, Vector(l, 0))
-            pt3 = rotate_param(pt2, pt, theta)
+            pt3 = rotate(pt2, pt, theta)
             pt4 = translate(pt3, Vector(2 * l, 0))
 
             diff_vec = diffvec(pt4, Point(8, 2))
@@ -135,7 +135,7 @@ class TestRotation(ut.TestCase):
         origin = Point(0, 0)
         angle = np.radians(45)
 
-        pt2 = rotate_param(pt1, origin, angle)
+        pt2 = rotate(pt1, origin, angle)
 
         assert np.isclose(np.sqrt(2), pt2.x)
         assert np.isclose(np.sqrt(2), pt2.y)
@@ -145,7 +145,7 @@ class TestRotation(ut.TestCase):
         origin = Point(0, 0)
         angle_param = Scalar.Param("theta", np.radians(45))
 
-        pt2 = rotate_param(pt1, origin, angle_param)
+        pt2 = rotate(pt1, origin, angle_param)
 
         assert pt2.grads["theta"].shape == (2, 1)
 
@@ -154,7 +154,7 @@ class TestRotation(ut.TestCase):
         origin = Point(0, 0)
         angle_param = np.radians(45)
 
-        pt2 = rotate_param(pt1, origin, angle_param)
+        pt2 = rotate(pt1, origin, angle_param)
 
         assert pt2.grads["l"].shape == (2, 1)
 

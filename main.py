@@ -333,7 +333,7 @@ def norm(pt: Point):
     return length
 
 
-def rotate_param(pt: Point, origin: Point, angle_param: Scalar):
+def rotate(pt: Point, origin: Point, angle_param: Scalar):
     # TODO: Same for points, coercion
     angle_param = Scalar(angle_param)
 
@@ -390,7 +390,7 @@ def parametric_pt(l=2.0, theta=np.radians(60)):
 
     pt = Point(0, 0)
     pt2 = translate(pt, Vector(l, 0))
-    pt3 = rotate_param(pt2, pt, theta)
+    pt3 = rotate(pt2, pt, theta)
     pt4 = translate(pt3, Vector(2 * l, 0))
 
     diff_vec = diffvec(pt4, Point(8, 2))
