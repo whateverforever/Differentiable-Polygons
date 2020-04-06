@@ -7,8 +7,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
+      - uses: actions/setup-python@v1
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy matplotlib scipy 
       - name: pytest
         uses: cclauss/GitHub-Action-for-pytest@0.5.0
         with:
-          args: pip install numpy matplotlib scipy && pytest
+          args: pytest
 
