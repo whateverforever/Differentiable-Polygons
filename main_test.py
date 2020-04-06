@@ -113,7 +113,9 @@ class TestIntegration(ut.TestCase):
             pt3 = rotate(pt2, pt, theta)
             pt4 = translate(pt3, Vector(2 * l, 0))
 
-            diff_vec = diffvec(pt4, Point(8, 2))
+            # should be reached for l=2.0, theta=30deg
+            const_target = Vector(2 * 2.0 + 2.0 * np.sqrt(3) / 2, 2.0 * 0.5)
+            diff_vec = diffvec(pt4, const_target)
             length = norm(diff_vec)
 
             return length, length.grads
