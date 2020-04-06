@@ -5,10 +5,7 @@ from hypothesis.strategies import integers, text, floats
 
 import numpy as np  # type:ignore
 from main import (
-    translate,
-    rotate,
     diffvec,
-    norm,
     Scalar,
     Point,
     Vector,
@@ -89,10 +86,10 @@ class TestIntegration(ut.TestCase):
         theta = Scalar.Param("theta", np.radians(45))
 
         pt = Point(0, 0)
-        pt2 = translate(pt, Vector(l, 0))
-        pt3 = rotate(pt2, pt, theta)
-        pt4 = translate(pt3, Vector(0, 0.5 * l))
-        pt5 = translate(pt4, Vector(4 * l2, 0))
+        pt2 = Point.translate(pt, Vector(l, 0))
+        pt3 = Point.rotate(pt2, pt, theta)
+        pt4 = Point.translate(pt3, Vector(0, 0.5 * l))
+        pt5 = Point.translate(pt4, Vector(4 * l2, 0))
 
         assert np.allclose(pt5.x, l.value * np.cos(theta.value) + 4 * l2.value)
         assert np.allclose(pt5.y, l.value * np.sin(theta.value) + 0.5 * l.value)
@@ -115,14 +112,14 @@ class TestIntegration(ut.TestCase):
             theta = Scalar.Param("theta", theta)
 
             pt = Point(0, 0)
-            pt2 = translate(pt, Vector(l, 0))
-            pt3 = rotate(pt2, pt, theta)
-            pt4 = translate(pt3, Vector(2 * l, 0))
+            pt2 = Point.translate(pt, Vector(l, 0))
+            pt3 = Point.rotate(pt2, pt, theta)
+            pt4 = Point.translate(pt3, Vector(2 * l, 0))
 
             # should be reached for l=2.0, theta=30deg
             const_target = Vector(2 * 2.0 + 2.0 * np.sqrt(3) / 2, 2.0 * 0.5)
             diff_vec = diffvec(pt4, const_target)
-            length = norm(diff_vec)
+            length = Point.norm(diff_vec)
 
             return length, length.grads
 
@@ -178,7 +175,7 @@ class TestPoint(ut.TestCase):
         l = Scalar.Param("l", 3.0)
 
         pt = Point(0, 0)
-        pt2 = translate(pt, Point(l, 0))
+        pt2 = Point.translate(pt, Point(l, 0))
 
         assert pt2.x == l.value
         assert np.shape(pt2.grads["l"]) == (2, 1)
@@ -189,7 +186,7 @@ class TestPoint(ut.TestCase):
         origin = Point(0, 0)
         angle = np.radians(45)
 
-        pt2 = rotate(pt1, origin, angle)
+        pt2 = Point.rotate(pt1, origin, angle)
 
         assert np.isclose(np.sqrt(2), pt2.x)
         assert np.isclose(np.sqrt(2), pt2.y)
@@ -200,7 +197,7 @@ class TestPoint(ut.TestCase):
 
         origin = Point(0, 0)
         pt1 = Point(2, 0)
-        pt2 = rotate(pt1, origin, theta)
+        pt2 = Point.rotate(pt1, origin, theta)
 
         assert pt2.grads["theta"].shape == (2, 1)
         assert np.allclose(
@@ -216,7 +213,7 @@ class TestPoint(ut.TestCase):
 
         pt1 = Point(l, 0)
         origin = Point(0, 0)
-        pt2 = rotate(pt1, origin, theta)
+        pt2 = Point.rotate(pt1, origin, theta)
 
         assert pt2.grads["l"].shape == (2, 1)
         assert np.allclose(pt2.grads["l"], [[np.cos(angle)], [np.sin(angle)]])
@@ -231,7 +228,7 @@ class TestLine(ut.TestCase):
         theta = Scalar.Param("theta", np.radians(60))
 
         pt = Point(1, 1)
-        pt2 = translate(pt, Point(l, 0))
+        pt2 = Point.translate(pt, Point(l, 0))
 
         line = Line.make_from_points(pt2, pt)
 
@@ -256,7 +253,7 @@ class TestLine(ut.TestCase):
         l = Scalar.Param("l", 2.0)
 
         pt = Point(1, 1)
-        pt2 = translate(pt, Point(l, 0))
+        pt2 = Point.translate(pt, Point(l, 0))
 
         line = Line.make_from_points(pt2, pt)
         line2 = line.translate(Vector(l, l))

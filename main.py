@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import typing as ty
 
@@ -115,6 +117,72 @@ class Point(GradientCarrier):
         grads = {"x": [[-1], [0]], "y": [[0], [-1]]}
 
         return Point(x2, y2).with_grads_from_previous(inputs, grads)
+
+    @staticmethod
+    def translate(pt: Point, vec: Point):
+        x2 = pt.x + vec.x
+        y2 = pt.y + vec.y
+
+        inputs = {"pt": pt, "vec": vec}
+        _grads = {}
+        _grads["pt"] = np.array([[1, 0], [0, 1]])
+        _grads["vec"] = np.array([[1, 0], [0, 1]])
+
+        pt2 = Point(x2, y2).with_grads_from_previous(inputs, _grads)
+        return pt2
+
+    @staticmethod
+    def norm(pt: Point):
+        eps = 1e-13
+
+        l2_norm = np.sqrt(eps + pt.x ** 2 + pt.y ** 2)
+
+        grad_pt = [[pt.x / l2_norm, pt.y / l2_norm]]
+
+        inputs = {"pt": pt}
+        _grads = {}
+        _grads["pt"] = grad_pt
+
+        return Scalar(l2_norm).with_grads_from_previous(inputs, _grads)
+
+    @staticmethod
+    def rotate(pt: Point, origin: Point, angle_param: Scalar):
+        # TODO: Same for points, coercion
+        angle_param = Scalar(angle_param)
+
+        x1 = pt.x
+        y1 = pt.y
+
+        ox = origin.x
+        oy = origin.y
+
+        angle = angle_param.value
+
+        x2 = (x1 - ox) * np.cos(angle) - (y1 - oy) * np.sin(angle) + ox
+        y2 = (x1 - ox) * np.sin(angle) + (y1 - oy) * np.cos(angle) + oy
+
+        d_dpt = np.array(
+            [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]
+        )
+        d_dorigin = [
+            [-np.cos(angle) + 1, np.sin(angle)],
+            [-np.sin(angle), -np.cos(angle) + 1],
+        ]
+        d_dangle = [
+            [(x1 - ox) * (-np.sin(angle) - (y1 - oy) * np.cos(angle))],
+            [(x1 - ox) * np.cos(angle) + (y1 - oy) * (-np.sin(angle))],
+        ]
+
+        inputs = {"pt": pt, "origin": origin, "angle": angle_param}
+
+        _grads = {}
+        _grads["pt"] = d_dpt
+        _grads["origin"] = d_dorigin
+        _grads["angle"] = d_dangle
+
+        pt2 = Point(x2, y2).with_grads_from_previous(inputs, _grads)
+
+        return pt2
 
 
 Vector = Point
@@ -325,70 +393,6 @@ class Line(GradientCarrier):
 
         ax.plot(x, y)
     """
-
-
-def translate(pt: Point, vec: Point):
-    x2 = pt.x + vec.x
-    y2 = pt.y + vec.y
-
-    inputs = {"pt": pt, "vec": vec}
-    _grads = {}
-    _grads["pt"] = np.array([[1, 0], [0, 1]])
-    _grads["vec"] = np.array([[1, 0], [0, 1]])
-
-    pt2 = Point(x2, y2).with_grads_from_previous(inputs, _grads)
-    return pt2
-
-
-def norm(pt: Point):
-    eps = 1e-13
-
-    l2_norm = np.sqrt(eps + pt.x ** 2 + pt.y ** 2)
-
-    grad_pt = [[pt.x / l2_norm, pt.y / l2_norm]]
-
-    inputs = {"pt": pt}
-    _grads = {}
-    _grads["pt"] = grad_pt
-
-    return Scalar(l2_norm).with_grads_from_previous(inputs, _grads)
-
-
-def rotate(pt: Point, origin: Point, angle_param: Scalar):
-    # TODO: Same for points, coercion
-    angle_param = Scalar(angle_param)
-
-    x1 = pt.x
-    y1 = pt.y
-
-    ox = origin.x
-    oy = origin.y
-
-    angle = angle_param.value
-
-    x2 = (x1 - ox) * np.cos(angle) - (y1 - oy) * np.sin(angle) + ox
-    y2 = (x1 - ox) * np.sin(angle) + (y1 - oy) * np.cos(angle) + oy
-
-    d_dpt = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
-    d_dorigin = [
-        [-np.cos(angle) + 1, np.sin(angle)],
-        [-np.sin(angle), -np.cos(angle) + 1],
-    ]
-    d_dangle = [
-        [(x1 - ox) * (-np.sin(angle) - (y1 - oy) * np.cos(angle))],
-        [(x1 - ox) * np.cos(angle) + (y1 - oy) * (-np.sin(angle))],
-    ]
-
-    inputs = {"pt": pt, "origin": origin, "angle": angle_param}
-
-    _grads = {}
-    _grads["pt"] = d_dpt
-    _grads["origin"] = d_dorigin
-    _grads["angle"] = d_dangle
-
-    pt2 = Point(x2, y2).with_grads_from_previous(inputs, _grads)
-
-    return pt2
 
 
 def diffvec(p1: Point, p2: Point):
