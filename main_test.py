@@ -198,22 +198,39 @@ class TestPoint(ut.TestCase):
         assert np.isclose(np.sqrt(2), pt2.y)
 
     def test_rotation_parametric_angle(self):
-        pt1 = Point(2, 0)
-        origin = Point(0, 0)
-        angle_param = Scalar.Param("theta", np.radians(45))
+        angle = np.radians(45)
+        theta = Scalar.Param("theta", angle)
 
-        pt2 = rotate(pt1, origin, angle_param)
+        origin = Point(0, 0)
+        pt1 = Point(2, 0)
+        pt2 = rotate(pt1, origin, theta)
 
         assert pt2.grads["theta"].shape == (2, 1)
+        assert np.allclose(pt2.grads["theta"], [[-np.sqrt(2)], [np.sqrt(2)]])
+
+        angle2 = np.radians(13)
+        theta2 = Scalar.Param("theta", angle2)
+        pt3 = rotate(pt1, origin, theta2)
+
+        assert np.allclose(
+            pt3.grads["theta"], [[-2 * np.sin(angle2)], [2 * np.cos(angle2)]],
+        )
 
     def test_rotation_parametric_pt(self):
-        pt1 = Point(Scalar.Param("l", 2.0), 0)
-        origin = Point(0, 0)
-        angle_param = np.radians(45)
+        # TODO replace random with Hypothesis
+        l = Scalar.Param("l", np.random.uniform(0, 4.0))
+        angle = np.radians(np.random.uniform(0, 90))
+        theta = Scalar.Param("theta", angle)
 
-        pt2 = rotate(pt1, origin, angle_param)
+        pt1 = Point(l, 0)
+        origin = Point(0, 0)
+        pt2 = rotate(pt1, origin, theta)
 
         assert pt2.grads["l"].shape == (2, 1)
+        assert np.allclose(pt2.grads["l"], [[np.cos(angle)], [np.sin(angle)]])
+        assert np.allclose(
+            pt2.grads["theta"], [[-l.value * np.sin(angle)], [l.value * np.cos(angle)]]
+        )
 
 
 class TestLine(ut.TestCase):
