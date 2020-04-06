@@ -387,7 +387,7 @@ def diffvec(p1: Point, p2: Point):
     return pt_new
 
 
-def parametric_pt(l=2.0, theta=np.radians(60)):
+def parametric_pt(l=2.0, theta=np.radians(10)):
     l = Scalar.Param("l", l)
     theta = Scalar.Param("theta", theta)
 
@@ -396,9 +396,9 @@ def parametric_pt(l=2.0, theta=np.radians(60)):
     pt3 = rotate(pt2, pt, theta)
     pt4 = translate(pt3, Vector(2 * l, 0))
 
-    diff_vec = diffvec(pt4, Point(8, 2))
+    target = Vector(2 * 2.0 + 2.0 * np.sqrt(3) / 2, 2.0 * 0.5)
+    diff_vec = diffvec(pt4, target)
     length = norm(diff_vec)
-
     return length, length.grads
 
 
