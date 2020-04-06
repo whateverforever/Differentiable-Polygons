@@ -10,5 +10,5 @@ jobs:
       - name: pytest
         uses: cclauss/GitHub-Action-for-pytest@0.5.0
         with:
-          args: pytest ; pwd ; ls -la .. ; ls -la /github/home ; ls -la /github/workflow ; ls -la /
+          args: pip install numpy matplotlib scipy && pytest
 
