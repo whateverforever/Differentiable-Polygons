@@ -353,12 +353,12 @@ def rotate(pt: Point, origin: Point, angle_param: Scalar):
     x2 = (x1 - ox) * np.cos(angle) - (y1 - oy) * np.sin(angle) + ox
     y2 = (x1 - ox) * np.sin(angle) + (y1 - oy) * np.cos(angle) + oy
 
-    dpt = [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]
-    dorigin = [
+    d_dpt = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+    d_dorigin = [
         [-np.cos(angle) + 1, np.sin(angle)],
         [-np.sin(angle), -np.cos(angle) + 1],
     ]
-    dangle = [
+    d_dangle = [
         [(x1 - ox) * (-np.sin(angle) - (y1 - oy) * np.cos(angle))],
         [(x1 - ox) * np.cos(angle) + (y1 - oy) * (-np.sin(angle))],
     ]
@@ -366,11 +366,9 @@ def rotate(pt: Point, origin: Point, angle_param: Scalar):
     inputs = {"pt": pt, "origin": origin, "angle": angle_param}
 
     _grads = {}
-    _grads["angle"] = dangle
-    _grads["origin"] = dorigin
-    _grads["pt"] = np.array(
-        [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]
-    )
+    _grads["pt"] = d_dpt
+    _grads["origin"] = d_dorigin
+    _grads["angle"] = d_dangle
 
     pt2 = Point(x2, y2).with_grads_from_previous(inputs, _grads)
 
