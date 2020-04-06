@@ -435,20 +435,25 @@ def main():
     length_reached, _ = parametric_pt(*res.x)
 
     xs = np.array(xs)
-    fig, axes = plt.subplots(ncols=2)
+    fig, axes = plt.subplots(ncols=3)
 
     xxs, yys = np.meshgrid(
         np.linspace(np.min(xs[:, 0]), np.max(xs[:, 0]), 50),
         np.linspace(np.min(xs[:, 1]), np.max(xs[:, 1]), 50),
     )
     zzs = np.zeros_like(xxs)
+    jjs = np.zeros((xxs.shape[0], xxs.shape[1], 2))
     for ix, x in enumerate(np.linspace(np.min(xs[:, 0]), np.max(xs[:, 0]), 50)):
         for iy, y in enumerate(np.linspace(np.min(xs[:, 1]), np.max(xs[:, 1]), 50)):
-            z = f([x, y])
-            zzs[ix, iy] = z
+            zzs[iy, ix] = f([x, y])
+            jjs[iy, ix] = jac([x, y])
 
     a = axes[0].contourf(xxs, yys, zzs, levels=50)
+    axes[0].contour(xxs, yys, zzs, levels=20, colors="k", linewidths=0.5)
     axes[0].plot(xs[:, 0], xs[:, 1], "-o")
+    axes[0].quiver(xxs[:, ::6], yys[:, ::6], jjs[:, ::6, 0], jjs[:, ::6, 1], scale=20)
+    plt.colorbar(a)
+
     axes[0].set_title("Solution Space")
     axes[0].set_xlabel("l")
     axes[0].set_ylabel("theta")
