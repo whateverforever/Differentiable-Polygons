@@ -28,6 +28,12 @@ class GradientCarrier:
         inside of the function, calculates the new gradients wrt. to the original parameters
         (by utilizing the local gradients like dself_dprevpt or dself_dparam).
 
+        inputs: GradientCarriers that that get transformed in the operation. Their
+                gradients will be used for chaining new ones onto.
+
+        local_grads: Gradients of this particular operation wrt the inputs. Must use
+                     same names.
+
         returns: an instance of this particular GradientCarrier with the gradient set
         """
         self_copy = copy.deepcopy(self)
