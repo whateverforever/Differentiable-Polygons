@@ -103,6 +103,9 @@ class Point(GradientCarrier):
         self.y = y.value
         self.gradients = update_grads(inputs, local_grads)
 
+    def as_numpy(self):
+        return np.array([[self.x], [self.y]])
+
     def __repr__(self):
         return "Pt({:.4f},{:.4f})".format(self.x, self.y)
 
