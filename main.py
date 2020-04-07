@@ -101,11 +101,11 @@ class Point(GradientCarrier):
         return "Pt({:.4f},{:.4f})".format(self.x, self.y)
 
     def __neg__(self):
-        x1 = self.x
-        y1 = self.y
+        x1 = Scalar(self.x)
+        y1 = Scalar(self.y)
 
-        x2 = -x1
-        y2 = -y1
+        x2 = Scalar(-x1.value)
+        y2 = Scalar(-y1.value)
 
         inputs = {"_x": x1, "_y": y1}
         grads = {"_x": [[-1], [0]], "_y": [[0], [-1]]}
