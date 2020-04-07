@@ -14,7 +14,7 @@ from main import (
     update_grads,
 )  # type:ignore
 
-sane_floats = floats(allow_infinity=False, allow_nan=False)
+reals = floats(allow_infinity=False, allow_nan=False)
 
 
 class TestCore(ut.TestCase):
@@ -158,7 +158,7 @@ class TestIntegration(ut.TestCase):
 
 
 class TestPoint(ut.TestCase):
-    @given(sane_floats, sane_floats, sane_floats, sane_floats)
+    @given(reals, reals, reals, reals)
     def test_subtraction(self, x1, y1, x2, y2):
         pt1 = Point(x1, y1)
         pt2 = Point(x2, y2)
@@ -171,10 +171,33 @@ class TestPoint(ut.TestCase):
         assert diff_vec.x == diffvec(pt1, pt2).x
         assert diff_vec.y == diffvec(pt1, pt2).y
 
-    @given(sane_floats, sane_floats, sane_floats)
-    def test_mul(self, x, y, scalar):
+    @given(
+        reals,
+        reals,
+        floats(allow_infinity=False, allow_nan=False, min_value=-1e10, max_value=1e10),
+    )
+    def test_div(self, x, y, s):
+        x = Param("x", x)
+        y = Param("y", y)
+        s = Param("s", s)
+
         pt = Point(x, y)
-        s = Scalar(scalar)
+
+        try:
+            res = pt / s
+
+            assert pt.x / s.value == res.x
+            assert pt.y / s.value == res.y
+        except ZeroDivisionError:
+            pass
+
+    @given(reals, reals, reals)
+    def test_mul(self, x, y, scalar):
+        xx = Param("xx", x)
+        yy = Param("yy", y)
+
+        pt = Point(xx, yy)
+        s = Param("s", scalar)
 
         # assert (s * pt).x == (pt * s).x
         res = pt * s
@@ -182,7 +205,13 @@ class TestPoint(ut.TestCase):
         assert scalar * x == res.x
         assert scalar * y == res.y
 
-    @given(sane_floats, sane_floats, sane_floats, sane_floats)
+        assert np.allclose(res.grads["s"], pt.as_numpy())
+        assert np.allclose(res.grads["s"], pt.as_numpy())
+
+        assert np.allclose(res.grads["xx"], [[s.value], [0.0]])
+        assert np.allclose(res.grads["yy"], [[0.0], [s.value]])
+
+    @given(reals, reals, reals, reals)
     def test_static_and_member_fun(self, x, y, shift_x, shift_y):
         a = Point(x, y)
         shift_vec = Vector(Scalar.Param("sx", shift_x), Scalar.Param("sy", shift_y))
@@ -194,14 +223,14 @@ class TestPoint(ut.TestCase):
         assert np.allclose(version1.grads["sx"], version2.grads["sx"])
         assert np.allclose(version1.grads["sy"], version2.grads["sy"])
 
-    @given(sane_floats, sane_floats, sane_floats, sane_floats)
+    @given(reals, reals, reals, reals)
     def test_diffvec(self, x1, y1, x2, y2):
         diff_vec = diffvec(Point(x1, y1), Point(x2, y2))
 
         assert diff_vec.x == x1 - x2
         assert diff_vec.y == y1 - y2
 
-    @given(sane_floats, sane_floats, sane_floats, sane_floats)
+    @given(reals, reals, reals, reals)
     def test_diffvec_param(self, x1, y1, x2, y2):
         x1 = Scalar.Param("x1", x1)
         y1 = Scalar.Param("y1", y1)
@@ -238,7 +267,7 @@ class TestPoint(ut.TestCase):
         assert np.isclose(np.sqrt(2), pt2.x)
         assert np.isclose(np.sqrt(2), pt2.y)
 
-    @given(sane_floats)
+    @given(reals)
     def test_rotation_parametric_angle(self, angle):
         theta = Scalar.Param("theta", angle)
 
@@ -251,7 +280,7 @@ class TestPoint(ut.TestCase):
             pt2.grads["theta"], [[-2 * np.sin(angle)], [2 * np.cos(angle)]],
         )
 
-    @given(sane_floats, sane_floats)
+    @given(reals, reals)
     def test_rotation_parametric_pt(self, l, angle):
         # TODO replace random with Hypothesis
         l = Scalar.Param("l", l)
@@ -297,6 +326,8 @@ class TestLine(ut.TestCase):
 
         line3 = line.rotate_ccw(-theta)
         assert line3.grads["theta"][0] < 0
+
+        # TODO: Add test for magnitude of grads
 
     def test_translation(self):
         l = Scalar.Param("l", 2.0)
