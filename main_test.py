@@ -7,6 +7,7 @@ import numpy as np  # type:ignore
 from main import (
     diffvec,
     Scalar,
+    Param,
     Point,
     Vector,
     Line,
@@ -48,6 +49,10 @@ class TestParameter(ut.TestCase):
 
         assert "l" in l.grads
         assert np.isclose(l.grads["l"], [[1.0]])
+
+        l = Param("abc", 1.23)
+
+        assert isinstance(l, Scalar)
 
     def test_param_and_point(self):
         l = Scalar.Param("l", 2.0)

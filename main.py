@@ -186,6 +186,7 @@ class Point(GradientCarrier):
 
 
 Vector = Point
+Param = Scalar.Param
 
 
 def update_grads(
