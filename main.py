@@ -356,12 +356,12 @@ class Line(GradientCarrier):
 
         return new_line
 
-    def intersect(self, other_line) -> Point:
-        m1 = self.m
-        b1 = self.b
+    def intersect(line_1: Line, line_2: Line) -> Point:
+        m1 = line_1.m
+        b1 = line_1.b
 
-        m2 = other_line.m
-        b2 = other_line.b
+        m2 = line_2.m
+        b2 = line_2.b
 
         x = (b2 - b1) / (m1 - m2)
         y = m1 * x + b1
@@ -378,11 +378,10 @@ class Line(GradientCarrier):
         ]
         dy_dline2 = [[((-b1 + b2) * m1) / (m1 - m2) ** 2, m1 / (m1 - m2)]]
 
-        inputs = {"other_line": other_line}
+        inputs = {"line_1": line_1, "line_2": line_2}
         local_grads = {
-            "other_line": np.vstack(
-                [np.hstack([dx_dline1, dx_dline2]), np.hstack([dy_dline1, dy_dline2])]
-            )
+            "line_1": np.vstack([dx_dline1, dy_dline1]),
+            "line_2": np.vstack([dx_dline2, dy_dline2]),
         }
 
         return Point(x, y).with_grads_from_previous(inputs, local_grads)
