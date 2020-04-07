@@ -282,32 +282,11 @@ class Line(GradientCarrier):
         b = (y1 * x2 - y2 * x1) / (x2 - x1)
         m = (y2 - b) / x2
 
-        db_dp1 = [
-            [
-                -(y2 / (-x1 + x2)) + (x2 * y1 - x1 * y2) / (-x1 + x2) ** 2,
-                x2 / (-x1 + x2),
-            ]
-        ]
-        db_dp2 = [
-            [
-                y1 / (-x1 + x2) - (x2 * y1 - x1 * y2) / (-x1 + x2) ** 2,
-                -(x1 / (-x1 + x2)),
-            ]
-        ]
+        dm_dp1 = [[(-y1 + y2) / (x1 - x2) ** 2, 1 / (x1 - x2)]]
+        dm_dp2 = [[(y1 - y2) / (x1 - x2) ** 2, 1 / (-x1 + x2)]]
 
-        dm_dp1 = [
-            [
-                (y2 / (-x1 + x2) - (x2 * y1 - x1 * y2) / (-x1 + x2) ** 2) / x2,
-                -(1 / (-x1 + x2)),
-            ]
-        ]
-        dm_dp2 = [
-            [
-                (-(y1 / (-x1 + x2)) + (x2 * y1 - x1 * y2) / (-x1 + x2) ** 2) / x2
-                - (y2 - (x2 * y1 - x1 * y2) / (-x1 + x2)) / x2 ** 2,
-                (1 + x1 / (-x1 + x2)) / x2,
-            ]
-        ]
+        db_dp1 = [[(x2 * (y1 - y2)) / (x1 - x2) ** 2, x2 / (-x1 + x2)]]
+        db_dp2 = [[(x1 * (-y1 + y2)) / (x1 - x2) ** 2, x1 / (x1 - x2)]]
 
         local_grads = {}
         local_grads["p1"] = d_dpt1 = np.vstack([dm_dp1, db_dp1])
@@ -374,15 +353,10 @@ class Line(GradientCarrier):
         y = m1 * x + b1
 
         # dx_dline meaning [dx_dm, dx_db]
-        dx_dline1 = [[-((-b1 + b2) / (m1 - m2) ** 2), -(1 / (m1 - m2))]]
+        dx_dline1 = [[(b1 - b2) / (m1 - m2) ** 2, 1 / (-m1 + m2)]]
         dx_dline2 = [[(-b1 + b2) / (m1 - m2) ** 2, 1 / (m1 - m2)]]
 
-        dy_dline1 = [
-            [
-                -(((-b1 + b2) * m1) / (m1 - m2) ** 2) + (-b1 + b2) / (m1 - m2),
-                1 - m1 / (m1 - m2),
-            ]
-        ]
+        dy_dline1 = [[((b1 - b2) * m2) / (m1 - m2) ** 2, -(m2 / (m1 - m2))]]
         dy_dline2 = [[((-b1 + b2) * m1) / (m1 - m2) ** 2, m1 / (m1 - m2)]]
 
         inputs = {"line_1": line_1, "line_2": line_2}
