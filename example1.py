@@ -7,8 +7,8 @@ from main import Line, Vector, Point, Scalar, Param
 def main():
     t = Param("t", 0.15)
     l = Param("l", 2.0)
-    theta = Param("theta", np.radians(30))
-    lower_angles = Param("lower_angles", np.radians(10))
+    theta = Param("theta", np.radians(10))
+    lower_angles = Param("lower_angles", np.radians(60))
 
     origin = Point(0, 0)
     pt1 = Point(l, 0)
@@ -33,11 +33,14 @@ def main():
     vec_left_up = (corner_top - origin) / (corner_top - origin).norm()
     pt2 = vec_left_up * t
 
+    assert pt2.grads["lower_angles"][0][0] < 0
+    assert pt2.grads["lower_angles"][1][0] > 0
+
+    line_cut = line_horiz.translate(pt2).rotate_ccw(theta)
+    line_cut.plot(ax=ax, lims=lims)
+
     ax.plot(pt2.x, pt2.y, "o")
     plt.show()
-
-    assert vec_left_up.grads["lower_angles"][0][0] < 0
-    assert vec_left_up.grads["lower_angles"][1][0] > 0
 
 
 if __name__ == "__main__":
