@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import typing as ty
+import warnings
 
 import numpy as np  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
@@ -186,8 +187,13 @@ def update_grads(
 ):
     incoming_parameters = []
     for input_name, input_obj in inputs.items():
-        # TODO: Can We get rid of this? Maybe if everything is coerced into GradientCarrier
         if not isinstance(input_obj, GradientCarrier):
+            warnings.warn(
+                "Got non-GradientCarrier obj of type {} as input. Won't have gradient"
+                " information, so please remove or replace by Scalar or Vector".format(
+                    type(input_obj)
+                )
+            )
             continue
 
         incoming_parameters.extend(list(input_obj.grads.keys()))
