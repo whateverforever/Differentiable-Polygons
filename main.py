@@ -219,10 +219,6 @@ def update_grads(
 
                 grads.append(dself_dinput @ dinput_dparam)
 
-        # TODO: Think about name clashes; How to prevent a global Param like
-        # 'm' or 'x' being overriden (added twice) when a local gradient
-        # with the same name exists?! :O
-
         out_grads[param] = np.sum(grads, axis=0)
     return out_grads
 
@@ -237,8 +233,8 @@ class Line(GradientCarrier):
         m = Scalar(m)
         b = Scalar(b)
 
-        inputs = {"_m": m, "_b": b}
-        local_grads = {"_m": [[1], [0]], "_b": [[0], [1]]}
+        inputs = {"m": m, "b": b}
+        local_grads = {"m": [[1], [0]], "b": [[0], [1]]}
 
         self.m = m.value
         self.b = b.value

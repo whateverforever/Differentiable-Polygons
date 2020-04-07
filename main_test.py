@@ -335,8 +335,6 @@ class TestLine(ut.TestCase):
         m = Param("m", 1.23)
         b = 0.0
         line_dial = Line(m, b)
-        print("m grads", m.grads)
-        print("dial grads", line_dial.grads)  # ddialm_dm = 2.0, why not 1.0?
 
         # As we wiggle its slope, the x-coordinate shifts, while the
         # y-coordinate stays untouched
