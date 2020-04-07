@@ -133,7 +133,6 @@ class Point(GradientCarrier):
         pt2 = Point(x2, y2).with_grads_from_previous(inputs, _grads)
         return pt2
 
-    @staticmethod
     def norm(pt: Point):
         eps = 1e-13
 
