@@ -268,7 +268,6 @@ class TestLine(ut.TestCase):
         line2 = line.rotate_ccw(theta)
 
         assert np.isclose(line2.m, 1)
-
         assert "theta" in line2.grads
         # TODO: Check grad values
 

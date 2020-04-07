@@ -300,6 +300,9 @@ class Line(GradientCarrier):
         if pivot is None:
             pivot = Point(0, 0)
 
+        if not isinstance(theta, Scalar):
+            theta = Scalar(theta)
+
         line_centered = self.translate(-pivot)
 
         m = line_centered.m
