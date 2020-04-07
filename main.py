@@ -109,6 +109,21 @@ class Point(GradientCarrier):
     def __repr__(self):
         return "Pt({:.4f},{:.4f})".format(self.x, self.y)
 
+    def __truediv__(pt: Point, s: ty.Union[Scalar, Number]) -> Point:
+        if isinstance(s, Scalar):
+            new_x = pt.x / s.value
+            new_y = pt.y / s.value
+
+            inputs = {"pt": pt, "s": s}
+            grads = {
+                "pt": [[1 / s.value, 0], [0, 1 / s.value]],
+                "s": [[-pt.x / (s.value ** 2)], [-pt.y / (s.value ** 2)]],
+            }
+
+            return Point(new_x, new_y).with_grads_from_previous(inputs, grads)
+
+        raise NotImplementedError("__truediv__ not yet impl for normal numbers")
+
     def __mul__(pt: Point, other: ty.Union[Point, Scalar, Number]) -> Point:
         if isinstance(other, Scalar):
             new_x = pt.x * other.value
