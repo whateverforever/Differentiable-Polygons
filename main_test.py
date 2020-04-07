@@ -159,6 +159,19 @@ class TestIntegration(ut.TestCase):
 
 class TestPoint(ut.TestCase):
     @given(sane_floats, sane_floats, sane_floats, sane_floats)
+    def test_subtraction(self, x1, y1, x2, y2):
+        pt1 = Point(x1, y1)
+        pt2 = Point(x2, y2)
+
+        diff_vec = pt1 - pt2
+
+        assert diff_vec.x == x1 - x2
+        assert diff_vec.y == y1 - y2
+
+        assert diff_vec.x == diffvec(pt1, pt2).x
+        assert diff_vec.y == diffvec(pt1, pt2).y
+
+    @given(sane_floats, sane_floats, sane_floats, sane_floats)
     def test_static_and_member_fun(self, x, y, shift_x, shift_y):
         a = Point(x, y)
         shift_vec = Vector(Scalar.Param("sx", shift_x), Scalar.Param("sy", shift_y))
