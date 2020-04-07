@@ -60,23 +60,14 @@ class Scalar(GradientCarrier):
     def __repr__(self):
         return "Scalar({:.4f})".format(self.value)
 
-    def __rmul__(self, other):
-        self_copy = copy.deepcopy(self)
+    def __rmul__(self, scalar2):
+        scalar1 = copy.deepcopy(self)
 
-        other = Scalar(other)
-        inputs = {"other": other}
-        local_grads = {"other": self_copy.value}
+        scalar2 = Scalar(scalar2)
+        inputs = {"scalar1": scalar1, "scalar2": scalar2}
+        local_grads = {"scalar2": [[scalar1.value]], "scalar1": [[scalar2.value]]}
 
-        # TODO: Inelegant, possibly not even correct
-        for key, grad in self_copy.gradients.items():
-            self_copy.gradients[key] = np.array(grad) * other.value
-
-        # Since a scalar can be a parameter. I.e. a source of gradient that doesn't
-        # stem from anywhere else, we need to inject our own gradients here.
-        # They won't come out of nowhere
-        local_grads.update(self_copy.gradients)
-
-        return Scalar(self_copy.value * other.value).with_grads_from_previous(
+        return Scalar(scalar1.value * scalar2.value).with_grads_from_previous(
             inputs, local_grads
         )
 
@@ -231,13 +222,6 @@ def update_grads(
         # TODO: Think about name clashes; How to prevent a global Param like
         # 'm' or 'x' being overriden (added twice) when a local gradient
         # with the same name exists?! :O
-
-        # If we got directly injected a parameter as input (i.e. rotate(pt, theta))
-        # Might be unnecessary, depending on how injections are handled
-        if param in local_grads:
-            dself_dparam = local_grads[param]
-
-            grads.append(dself_dparam)
 
         out_grads[param] = np.sum(grads, axis=0)
     return out_grads

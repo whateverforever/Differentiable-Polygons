@@ -23,7 +23,7 @@ class TestCore(ut.TestCase):
 
         b = a.value ** 2 + 1.2 * l.value
 
-        inputs = {"a": a}
+        inputs = {"a": a, "l": l}
         db_dinputs = {"a": [[2 * a.value]], "l": [[1.2]]}
         b = Scalar(b).with_grads_from_previous(inputs, db_dinputs)
         db_dparams = update_grads(inputs, db_dinputs)
@@ -31,8 +31,12 @@ class TestCore(ut.TestCase):
         assert np.allclose(db_dparams["l"], [[2 * a.value + 1.2]])
 
         c = b.value ** 2 + a.value ** 2 + np.cos(l.value)
-        inputs = {"a": a, "b": b}
-        dc_dinputs = {"a": [[2 * a.value]], "b": [[2 * b.value]], "l": -np.sin(l.value)}
+        inputs = {"a": a, "b": b, "l": l}
+        dc_dinputs = {
+            "a": [[2 * a.value]],
+            "b": [[2 * b.value]],
+            "l": [[-np.sin(l.value)]],
+        }
         c = Scalar(c).with_grads_from_previous(inputs, dc_dinputs)
 
         dc_dparams = update_grads(inputs, dc_dinputs)
