@@ -269,7 +269,10 @@ class TestLine(ut.TestCase):
 
         assert np.isclose(line2.m, 1)
         assert "theta" in line2.grads
-        # TODO: Check grad values
+        assert line2.grads["theta"][0] > 0
+
+        line3 = line.rotate_ccw(-theta)
+        assert line3.grads["theta"][0] < 0
 
     def test_translation(self):
         l = Scalar.Param("l", 2.0)
