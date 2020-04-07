@@ -286,8 +286,8 @@ class Line(GradientCarrier):
         new_line = Line(m, b).with_grads_from_previous(inputs, local_grads)
         return new_line
 
-    def translate(self, vec: Vector):
-        line_old = copy.deepcopy(self)
+    def translate(a_line: Line, vec: Vector) -> Line:
+        line_old = copy.deepcopy(a_line)
 
         m = line_old.m
         b = line_old.b + vec.y - line_old.m * vec.x
@@ -301,7 +301,7 @@ class Line(GradientCarrier):
 
         return new_line
 
-    def rotate_ccw(self, theta: Scalar, pivot: Point = None):
+    def rotate_ccw(self, theta: Scalar, pivot: Point = None) -> Line:
         if pivot is None:
             pivot = Point(0, 0)
 
@@ -361,13 +361,12 @@ class Line(GradientCarrier):
 
         return Point(x, y).with_grads_from_previous(inputs, local_grads)
 
-    """
     def plot(self, ax=plt, lims=(-20, 20, 10)):
         x = np.linspace(*lims)
         y = self.m * x + self.b
 
         ax.plot(x, y)
-    """
+        ax.axis("equal")
 
 
 def diffvec(p1: Point, p2: Point):
