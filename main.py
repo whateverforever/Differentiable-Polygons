@@ -121,8 +121,7 @@ class Point(GradientCarrier):
 
         return Point(x2, y2).with_grads_from_previous(inputs, grads)
 
-    @staticmethod
-    def translate(pt: Point, vec: Point):
+    def translate(pt: Point, vec: Point) -> Point:
         x2 = pt.x + vec.x
         y2 = pt.y + vec.y
 
@@ -148,8 +147,7 @@ class Point(GradientCarrier):
 
         return Scalar(l2_norm).with_grads_from_previous(inputs, _grads)
 
-    @staticmethod
-    def rotate(pt: Point, origin: Point, angle_param: Scalar):
+    def rotate(pt: Point, origin: Point, angle_param: Scalar) -> Point:
         # TODO: Same for points, coercion
         angle_param = Scalar(angle_param)
 

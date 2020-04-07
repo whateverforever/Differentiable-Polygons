@@ -112,9 +112,9 @@ class TestIntegration(ut.TestCase):
             theta = Scalar.Param("theta", theta)
 
             pt = Point(0, 0)
-            pt2 = Point.translate(pt, Vector(l, 0))
-            pt3 = Point.rotate(pt2, pt, theta)
-            pt4 = Point.translate(pt3, Vector(2 * l, 0))
+            pt2 = pt.translate(Vector(l, 0))
+            pt3 = pt2.rotate(pt, theta)
+            pt4 = pt3.translate(Vector(2 * l, 0))
 
             # should be reached for l=2.0, theta=30deg
             const_target = Vector(2 * 2.0 + 2.0 * np.sqrt(3) / 2, 2.0 * 0.5)
@@ -149,6 +149,18 @@ class TestIntegration(ut.TestCase):
 
 
 class TestPoint(ut.TestCase):
+    @given(sane_floats, sane_floats, sane_floats, sane_floats)
+    def test_static_and_member_fun(self, x, y, shift_x, shift_y):
+        a = Point(x, y)
+        shift_vec = Vector(Scalar.Param("sx", shift_x), Scalar.Param("sy", shift_y))
+
+        version1 = a.translate(shift_vec)
+        version2 = Point.translate(a, shift_vec)
+
+        assert np.allclose(version1.as_numpy(), version2.as_numpy())
+        assert np.allclose(version1.grads["sx"], version2.grads["sx"])
+        assert np.allclose(version1.grads["sy"], version2.grads["sy"])
+
     @given(sane_floats, sane_floats, sane_floats, sane_floats)
     def test_diffvec(self, x1, y1, x2, y2):
         diff_vec = diffvec(Point(x1, y1), Point(x2, y2))
