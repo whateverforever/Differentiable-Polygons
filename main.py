@@ -328,9 +328,9 @@ class Line(GradientCarrier):
             [0, 1],
         ]
 
-        inputs = {"theta": theta, "pivot": pivot, "line_centered": line_centered}
+        inputs = {"theta": theta, "line_centered": line_centered}
 
-        rotated_line = Line(m2, b).with_grads_from_previous(inputs, local_grads)
+        rotated_line = Line(m2, b2).with_grads_from_previous(inputs, local_grads)
 
         new_line = rotated_line.translate(pivot)
 
