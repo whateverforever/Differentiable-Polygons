@@ -32,6 +32,7 @@ def main():
 
     vec_left_up = (corner_top - origin) / (corner_top - origin).norm()
     pt2 = vec_left_up * t
+    ax.plot(pt2.x, pt2.y, "o")
 
     assert pt2.grads["lower_angles"][0][0] < 0
     assert pt2.grads["lower_angles"][1][0] > 0
@@ -39,7 +40,11 @@ def main():
     line_cut = line_horiz.translate(pt2).rotate_ccw(theta)
     line_cut.plot(ax=ax, lims=lims)
 
-    ax.plot(pt2.x, pt2.y, "o")
+    pt3 = line_cut.intersect(line_right)
+    ax.plot(pt3.x, pt3.y, "o")
+
+    print("pt3 grads", pt3.grads)
+
     plt.show()
 
 
