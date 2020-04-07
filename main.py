@@ -96,8 +96,8 @@ class Point(GradientCarrier):
         x = Scalar(x)
         y = Scalar(y)
 
-        inputs = {"x": x, "y": y}
-        local_grads = {"x": [[1], [0]], "y": [[0], [1]]}
+        inputs = {"_x": x, "_y": y}
+        local_grads = {"_x": [[1], [0]], "_y": [[0], [1]]}
 
         self.x = x.value
         self.y = y.value
@@ -116,8 +116,8 @@ class Point(GradientCarrier):
         x2 = -x1
         y2 = -y1
 
-        inputs = {"x": x1, "y": y1}
-        grads = {"x": [[-1], [0]], "y": [[0], [-1]]}
+        inputs = {"_x": x1, "_y": y1}
+        grads = {"_x": [[-1], [0]], "_y": [[0], [-1]]}
 
         return Point(x2, y2).with_grads_from_previous(inputs, grads)
 
@@ -228,6 +228,10 @@ def update_grads(
 
                 grads.append(dself_dinput @ dinput_dparam)
 
+        # TODO: Think about name clashes; How to prevent a global Param like
+        # 'm' or 'x' being overriden (added twice) when a local gradient
+        # with the same name exists?! :O
+
         # If we got directly injected a parameter as input (i.e. rotate(pt, theta))
         # Might be unnecessary, depending on how injections are handled
         if param in local_grads:
@@ -249,12 +253,15 @@ class Line(GradientCarrier):
         m = Scalar(m)
         b = Scalar(b)
 
-        inputs = {"m": m, "b": b}
-        local_grads = {"m": [[1], [0]], "b": [[0], [1]]}
+        inputs = {"_m": m, "_b": b}
+        local_grads = {"_m": [[1], [0]], "_b": [[0], [1]]}
 
         self.m = m.value
         self.b = b.value
         self.gradients = update_grads(inputs, local_grads)
+
+    def __repr__(self):
+        return f"Line(m={self.m:.4f}, b={self.b:.4f})"
 
     @staticmethod
     def make_from_points(p1: Point, p2: Point):
