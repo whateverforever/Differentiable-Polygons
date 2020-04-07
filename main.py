@@ -61,6 +61,14 @@ class Scalar(GradientCarrier):
     def __repr__(self):
         return "Scalar({:.4f})".format(self.value)
 
+    def __neg__(scalar_old):
+        val_new = -scalar_old.value
+
+        inputs = {"scalar_old": scalar_old}
+        grads = {"scalar_old": [[-1]]}
+
+        return Scalar(val_new).with_grads_from_previous(inputs, grads)
+
     def __rmul__(self, scalar2):
         scalar1 = copy.deepcopy(self)
 
@@ -101,15 +109,12 @@ class Point(GradientCarrier):
     def __repr__(self):
         return "Pt({:.4f},{:.4f})".format(self.x, self.y)
 
-    def __neg__(self):
-        x1 = Scalar(self.x)
-        y1 = Scalar(self.y)
+    def __neg__(old_pt):
+        x2 = -old_pt.x
+        y2 = -old_pt.y
 
-        x2 = Scalar(-x1.value)
-        y2 = Scalar(-y1.value)
-
-        inputs = {"_x": x1, "_y": y1}
-        grads = {"_x": [[-1], [0]], "_y": [[0], [-1]]}
+        inputs = {"old_pt": old_pt}
+        grads = {"old_pt": [[-1, 0], [0, -1]]}
 
         return Point(x2, y2).with_grads_from_previous(inputs, grads)
 
