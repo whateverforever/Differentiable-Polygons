@@ -377,13 +377,13 @@ def parametric_pt(l=2.0, theta=np.radians(10)):
     theta = Scalar.Param("theta", theta)
 
     pt = Point(0, 0)
-    pt2 = translate(pt, Vector(l, 0))
-    pt3 = rotate(pt2, pt, theta)
-    pt4 = translate(pt3, Vector(2 * l, 0))
+    pt2 = pt.translate(Vector(l, 0))
+    pt3 = pt2.rotate(pt, theta)
+    pt4 = pt3.translate(Vector(2 * l, 0))
 
     target = Vector(2 * 2.0 + 2.0 * np.sqrt(3) / 2, 2.0 * 0.5)
     diff_vec = diffvec(pt4, target)
-    length = norm(diff_vec)
+    length = diff_vec.norm()
     return length, length.grads
 
 
