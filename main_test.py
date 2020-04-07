@@ -171,6 +171,17 @@ class TestPoint(ut.TestCase):
         assert diff_vec.x == diffvec(pt1, pt2).x
         assert diff_vec.y == diffvec(pt1, pt2).y
 
+    @given(sane_floats, sane_floats, sane_floats)
+    def test_mul(self, x, y, scalar):
+        pt = Point(x, y)
+        s = Scalar(scalar)
+
+        # assert (s * pt).x == (pt * s).x
+        res = pt * s
+
+        assert scalar * x == res.x
+        assert scalar * y == res.y
+
     @given(sane_floats, sane_floats, sane_floats, sane_floats)
     def test_static_and_member_fun(self, x, y, shift_x, shift_y):
         a = Point(x, y)

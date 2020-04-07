@@ -109,6 +109,23 @@ class Point(GradientCarrier):
     def __repr__(self):
         return "Pt({:.4f},{:.4f})".format(self.x, self.y)
 
+    def __mul__(pt: Point, other: ty.Union[Point, Scalar, Number]) -> Point:
+        if isinstance(other, Scalar):
+            new_x = pt.x * other.value
+            new_y = pt.y * other.value
+
+            inputs = {"pt": pt, "scalar": other}
+            grads = {
+                "pt": [[other.value, 0], [0, other.value]],
+                "scalar": [[pt.x], [pt.y]],
+            }
+
+            return Point(new_x, new_y).with_grads_from_previous(inputs, grads)
+
+        raise NotImplementedError(
+            "__mul__ not yet implemented for {}".format(type(other))
+        )
+
     def __sub__(pt1: Point, pt2: Point) -> Point:
         x3 = pt1.x - pt2.x
         y3 = pt1.y - pt2.y
