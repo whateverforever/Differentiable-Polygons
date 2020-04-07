@@ -314,3 +314,29 @@ class TestLine(ut.TestCase):
 
         assert np.isclose(intersect.x, 2.33333)
         assert np.isclose(intersect.y, 3.33333)
+
+        h = Param("h", 2.0)
+        line_a = Line.make_from_points(Point(0, 0), Point(1, 1))
+        line_horiz = Line.make_from_points(Point(0, h), Point(5, h))
+
+        intersect = line_a.intersect(line_horiz)
+        assert np.allclose(intersect.as_numpy(), [[2], [2]])
+        assert np.allclose(intersect.grads["h"], [[1], [1]])
+
+        intersect_2 = line_horiz.intersect(line_a)
+        assert np.allclose(intersect.as_numpy(), intersect_2.as_numpy())
+        assert np.allclose(intersect.grads["h"], intersect_2.grads["h"])
+
+        # Imagine a line like a clock dial
+        m = Param("m", 1.23)
+        b = 0.0
+        line_dial = Line(m, b)
+        print("m grads", m.grads)
+        print("dial grads", line_dial.grads)  # ddialm_dm = 2.0, why not 1.0?
+
+        # As we wiggle its slope, the x-coordinate shifts, while the
+        # y-coordinate stays untouched
+        intersect2 = line_dial.intersect(line_horiz)
+
+        assert np.allclose(intersect2.grads["m"][0], [(b - h.value) / (m.value ** 2)])
+        assert np.allclose(intersect2.grads["m"][1], [0.0])
