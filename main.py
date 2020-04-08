@@ -86,7 +86,11 @@ class Scalar(GradientCarrier):
         # TODO: This is a bit too much all over the place. How to harmonize?
         if isinstance(value, Scalar):
             grads.update(value.grads)
-        return Scalar(value).with_grads(grads)
+
+        param = Scalar(value).with_grads(grads)
+        param.name = name
+
+        return param
 
 
 class Point(GradientCarrier):
