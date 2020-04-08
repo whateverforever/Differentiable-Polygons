@@ -15,6 +15,7 @@ from main import (
 )  # type:ignore
 
 reals = floats(allow_infinity=False, allow_nan=False)
+reals2 = lambda **kwargs: floats(allow_infinity=False, allow_nan=False, **kwargs)
 
 
 class TestCore(ut.TestCase):
@@ -267,7 +268,7 @@ class TestPoint(ut.TestCase):
         assert np.isclose(np.sqrt(2), pt2.x)
         assert np.isclose(np.sqrt(2), pt2.y)
 
-    @given(reals)
+    @given(reals2(min_value=-np.radians(720), max_value=np.radians(720)))
     def test_rotation_parametric_angle(self, angle):
         theta = Scalar.Param("theta", angle)
 
