@@ -281,6 +281,31 @@ class TestPoint(ut.TestCase):
             pt2.grads["theta"], [[-2 * np.sin(angle)], [2 * np.cos(angle)]],
         )
 
+        def fun(angle):
+            theta = Scalar.Param("theta", angle)
+            origin = Point(0, 0)
+            pt1 = Point(2, 0)
+            pt2 = pt1.rotate(origin, theta)
+
+            return pt2
+
+        params = [theta]
+
+        h = 0.01
+        for param in params:
+            x = param.value
+
+            xs = [x - h, x, x + h]
+            fs = [fun(x).as_numpy() for x in xs]
+
+            grad_analyt = fun(x).grads[param.name]
+            grad_numeric = np.gradient(fs, xs, axis=0)[1]
+
+            eps = 1e-10
+            rel_err = np.abs((grad_analyt - grad_numeric) / (grad_analyt + eps))
+
+            assert np.all(rel_err < 1e-4)
+
     @given(reals, reals)
     def test_rotation_parametric_pt(self, l, angle):
         # TODO replace random with Hypothesis
