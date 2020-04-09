@@ -61,7 +61,15 @@ class Scalar(GradientCarrier):
     def __repr__(self):
         return "Scalar({:.4f})".format(self.value)
 
-    def __neg__(scalar_old):
+    def __add__(scal1: Scalar, scal2: Scalar) -> Scalar:
+        val_new = scal1.value + scal2.value
+
+        inputs = {"scal1": scal1, "scal2": scal2}
+        grads = {"scal1": [[1]], "scal2": [[1]]}
+
+        return Scalar(val_new).with_grads_from_previous(inputs, grads)
+
+    def __neg__(scalar_old: Scalar):
         val_new = -scalar_old.value
 
         inputs = {"scalar_old": scalar_old}
@@ -419,11 +427,11 @@ class Line(GradientCarrier):
 
         return Point(x, y).with_grads_from_previous(inputs, local_grads)
 
-    def plot(self, ax=plt, lims=(-20, 20, 10)):
+    def plot(self, ax=plt, lims=(-20, 20, 10), label=None):
         x = np.linspace(*lims)
         y = self.m * x + self.b
 
-        ax.plot(x, y)
+        ax.plot(x, y, label=label)
         ax.axis("equal")
 
 
