@@ -154,22 +154,22 @@ def main():
 
 
 def is_oriented_ccw(poly: ty.List[Point]) -> bool:
-    x1 = poly[0].x
-    y1 = poly[0].y
+    edge_sum = 0
 
-    x2 = poly[1].x
-    y2 = poly[1].y
+    for i, pt in enumerate(poly):
+        if i == 0:
+            continue
 
-    x3 = poly[2].x
-    y3 = poly[2].y
+        pt1 = poly[i - 1]
+        pt2 = poly[i]
 
-    slope1 = (y2 - y1) / (x2 - x1)
-    slope2 = (y3 - y2) / (x3 - x2)
+        edge = (pt2.x - pt1.x) * (pt2.y + pt1.y)
+        edge_sum += edge
 
-    if np.isclose(slope1, slope2):
-        raise NotImplementedError("Polygons with colinear segments not supported")
+    if not np.allclose(poly[0].as_numpy(), poly[-1].as_numpy()):
+        edge_sum += (poly[0].x - poly[-1].x) * (poly[0].y + poly[-1].y)
 
-    return slope1 < slope2
+    return edge_sum < 0
 
 
 def same_orientation(poly1: ty.List[Point], poly2: ty.List[Point]) -> bool:
