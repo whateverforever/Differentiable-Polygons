@@ -45,17 +45,23 @@ def main():
     assert pt1.grads["lower_angles"][1][0] > 0
 
     # TODO: Check if gradients for d_dpt1 and d_dpt2 correct (pivot!)
-    cut_lower = line_horiz.translate(vec_left_up * t).rotate_ccw(theta, pivot=pt1)
+    cut_lower = line_horiz.rotate_ccw(theta, pivot=corner_left).translate(
+        vec_left_up * t
+    )
     cut_lower2 = line_horiz.rotate_ccw(theta, pivot=corner_left).translate(
         vec_left_up * (t + s)
     )
 
-    cut_right = line_right.translate(vec_bottom_left * t).rotate_ccw(theta, pivot=pt2)
+    cut_right = line_right.rotate_ccw(theta, pivot=corner_right).translate(
+        vec_bottom_left * t
+    )
     cut_right2 = line_right.rotate_ccw(theta, pivot=corner_right).translate(
         vec_bottom_left * (t + s)
     )
 
-    cut_top = line_left.translate(vec_right_down * t).rotate_ccw(theta, pivot=pt3)
+    cut_top = line_left.rotate_ccw(theta, pivot=corner_top).translate(
+        vec_right_down * t
+    )
     cut_top2 = line_left.rotate_ccw(theta, pivot=corner_top).translate(
         vec_right_down * (t + s)
     )
