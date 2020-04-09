@@ -140,11 +140,16 @@ def draw_polygons(polygons, ax=None, title=None, debug=False):
         fig, ax = plt.subplots()
 
     for poly in polygons:
+        n = len(poly)
         points2D = [(point.x, point.y) for point in poly]
+
+        if not np.allclose(points2D[-1], points2D[0]):
+            points2D.append(points2D[0])
+            n += 1
 
         codes = []
         codes.append(Path.MOVETO)
-        for i in range(len(poly) - 2):
+        for i in range(n - 2):
             codes.append(Path.LINETO)
         codes.append(Path.CLOSEPOLY)
 
