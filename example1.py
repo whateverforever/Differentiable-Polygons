@@ -1,3 +1,6 @@
+import copy
+import typing as ty
+
 import numpy as np  # type:ignore
 import matplotlib.pyplot as plt  # type:ignore
 from matplotlib.path import Path  # type:ignore
@@ -106,16 +109,26 @@ def main():
     plt.ylim((-0.05, 1.8))
     plt.show()
 
-    flank_lower = [corner_left, pt1, pt1i, tri_lr, pt2s, corner_left]
-    flank_right = [corner_right, pt2, pt2i, tri_t, pt3s, corner_right]
-    flank_top = [corner_top, pt3, pt3i, tri_ll, pt1s, corner_top]
-    triangle = [tri_ll, tri_lr, tri_t, tri_ll]
+    # flank_lower = Polygon.MakeFromPoints([pt1, pt2, ...])
+    # flank_lower_l = flank_lower.mirror_across_line(line)
+    #
+    # doubleflank = flank_lower.connect_with_poly(flank_lower_l)
+
+    flank_lower = [corner_left, pt1, pt1i, tri_lr, pt2s]
+    # tmp
+    flank_lower_l = [point.mirror_across_line(line_left) for point in flank_lower]
+
+    flank_right = [corner_right, pt2, pt2i, tri_t, pt3s]
+    flank_top = [corner_top, pt3, pt3i, tri_ll, pt1s]
+    triangle = [tri_ll, tri_lr, tri_t]
 
     cell_bottom = [flank_lower, flank_right, flank_top, triangle]
 
-    lower_half = [
+    lower_half = []
+    cell_l = [
         [point.mirror_across_line(line_left) for point in poly] for poly in cell_bottom
     ]
+    lower_half.extend(cell_l)
     lower_half.extend(
         [
             [point.mirror_across_line(line_right) for point in poly]
@@ -133,6 +146,104 @@ def main():
     ]
 
     draw_polygons([*lower_half, *upper_half])
+
+    # connect flank_lower and flank_lower_l
+    abc = join_two_polygons(flank_lower, flank_lower_l)
+
+    draw_polygons([abc])
+
+
+def is_oriented_ccw(poly: ty.List[Point]) -> bool:
+    x1 = poly[0].x
+    y1 = poly[0].y
+
+    x2 = poly[1].x
+    y2 = poly[1].y
+
+    x3 = poly[2].x
+    y3 = poly[2].y
+
+    slope1 = (y2 - y1) / (x2 - x1)
+    slope2 = (y3 - y2) / (x3 - x2)
+
+    if np.isclose(slope1, slope2):
+        raise NotImplementedError("Polygons with colinear segments not supported")
+
+    return slope1 < slope2
+
+
+def same_orientation(poly1: ty.List[Point], poly2: ty.List[Point]) -> bool:
+    orient1 = is_oriented_ccw(poly1)
+    orient2 = is_oriented_ccw(poly2)
+
+    return orient1 == orient2
+
+
+def flip_orientation(poly: ty.List[Point]) -> ty.List[Point]:
+    return list(reversed(poly))
+
+
+def join_two_polygons(poly1, poly2):
+    poly1 = copy.deepcopy(poly1)
+    poly2 = copy.deepcopy(poly2)
+
+    if same_orientation(poly1, poly2):
+        poly2 = flip_orientation(poly2)
+
+    in_polys = [poly1, poly2]
+
+    def vert_exists_in(vert: Point, other_poly: ty.List[Point]):
+        shared_points = [
+            idx
+            for idx, point in enumerate(other_poly)
+            if np.allclose(vert.as_numpy(), point.as_numpy())
+        ]
+
+        if len(shared_points) == 0:
+            return False
+
+        return int(shared_points[0])
+
+    def vert_exists_in_other(poly_idx, vert_idx):
+        other_poly_idx = 1 if poly_idx == 0 else 0
+
+        other_poly = in_polys[other_poly_idx]
+        vert = in_polys[poly_idx][vert_idx]
+
+        return vert_exists_in(vert, other_poly)
+
+    start_vert = None
+
+    for i, _ in enumerate(poly1):
+        if vert_exists_in_other(0, i) is False:
+            start_vert = i
+            break
+
+    curr_vert_idx: int = start_vert
+    curr_poly_idx: int = 0
+
+    out_poly: ty.List[Point] = [in_polys[curr_poly_idx][curr_vert_idx]]
+
+    while True:
+        if curr_vert_idx + 1 < len(in_polys[curr_poly_idx]):
+            curr_vert_idx += 1
+        else:
+            curr_vert_idx = 0
+
+        if (
+            vert_exists_in(in_polys[curr_poly_idx][curr_vert_idx], out_poly)
+            is not False
+        ):
+            return np.array(out_poly)
+
+        out_poly.append(in_polys[curr_poly_idx][curr_vert_idx])
+
+        idx_in_other = vert_exists_in_other(curr_poly_idx, curr_vert_idx)
+        if idx_in_other is False:
+            pass
+        else:
+            curr_poly_idx = 1 if curr_poly_idx == 0 else 0
+            curr_vert_idx = idx_in_other
 
 
 def draw_polygons(polygons, ax=None, title=None, debug=False):
