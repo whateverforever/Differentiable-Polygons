@@ -159,6 +159,15 @@ class TestIntegration(ut.TestCase):
 
 
 class TestPoint(ut.TestCase):
+    def test_mirror_axis(self):
+        pt = Point(3, 3)
+        line = Line(0, 2)
+
+        pt_mirr = pt.mirror_across_line(line)
+
+        assert np.allclose(pt_mirr.as_numpy(), [[3], [1]])
+        # TODO: Gradient
+
     @given(reals, reals, reals, reals)
     def test_subtraction(self, x1, y1, x2, y2):
         pt1 = Point(x1, y1)

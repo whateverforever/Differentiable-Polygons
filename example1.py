@@ -106,7 +106,16 @@ def main():
     plt.ylim((-0.05, 1.8))
     plt.show()
 
-    draw_polygons([[corner_left, pt1, pt1i, tri_lr, pt2s, corner_left]])
+    flank_lower = [corner_left, pt1, pt1i, tri_lr, pt2s, corner_left]
+    flank_right = [corner_right, pt2, pt2i, tri_t, pt3s, corner_right]
+    flank_top = [corner_top, pt3, pt3i, tri_ll, pt1s, corner_top]
+    triangle = [tri_ll, tri_lr, tri_t, tri_ll]
+
+    flank_lower_l = [point.mirror_across_line(line_left) for point in flank_lower]
+
+    draw_polygons([flank_lower_l, flank_lower, flank_right, flank_top, triangle])
+
+    assert np.allclose(flank_lower_l[1].grads["l"], flank_lower[1].grads["l"])
 
 
 def draw_polygons(polygons, ax=None, title=None, debug=False):
