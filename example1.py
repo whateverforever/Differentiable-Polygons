@@ -155,7 +155,7 @@ def main():
 
     all_unified = join_polygons([*lower_half, *upper_half])
 
-    draw_polygons(all_unified)
+    draw_polygons(all_unified, draw_grads=["l"])
 
 
 def is_oriented_ccw(poly: ty.List[Point]) -> bool:
@@ -189,11 +189,11 @@ def flip_orientation(poly: ty.List[Point]) -> ty.List[Point]:
 
 
 def join_polygons(multipoly: ty.List[ty.List[Point]]) -> ty.List[ty.List[Point]]:
-    # go through all poly pairs
-    # share vertex? -> unify and add
-    # note all lone polys
-    # return all lone polys and all unified polys
-
+    """
+    Takes a list of polygons, some of which might be connectable. It then recursively
+    tries to match pairs of two together. As such, it can also resolve connections
+    of more than two polygons.
+    """
     visited_pairs = []
     out_multipoly = []
     lone_polys = copy.copy(multipoly)
@@ -212,8 +212,6 @@ def join_polygons(multipoly: ty.List[ty.List[Point]]) -> ty.List[ty.List[Point]]
                 continue
 
             if num_shared_verts(poly1, poly2) >= 2:
-                print("what", ip1, ip2)
-
                 joined = join_two_polygons(poly1, poly2)
                 out_multipoly.append(joined)
 
@@ -221,9 +219,10 @@ def join_polygons(multipoly: ty.List[ty.List[Point]]) -> ty.List[ty.List[Point]]
                 lone_polys[ip2] = None
 
     lone_polys = [poly for poly in lone_polys if poly is not None]
-    draw_polygons(lone_polys, title="Lone Polys!")
     out_multipoly.extend(lone_polys)
 
+    # If we have multiple polygons connected together, one pass alone won't be
+    # enough to connect all of them together --> recurse
     visited_pairs = []
     for ip1, poly1 in enumerate(out_multipoly):
         for ip2, poly2 in enumerate(out_multipoly):
@@ -234,8 +233,6 @@ def join_polygons(multipoly: ty.List[ty.List[Point]]) -> ty.List[ty.List[Point]]
             visited_pairs.append(pair)
 
             if num_shared_verts(poly1, poly2) >= 2:
-                warnings.warn("Still some shared polys leftover. Recursing..")
-
                 return join_polygons(out_multipoly)
 
     return out_multipoly
@@ -270,7 +267,6 @@ def join_two_polygons(poly1, poly2):
 
     if not same_orientation(poly1, poly2):
         poly2 = flip_orientation(poly2)
-        print("Had to flip one")
 
     in_polys = [poly1, poly2]
 
