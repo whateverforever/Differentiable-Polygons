@@ -36,8 +36,11 @@ def main():
     vec_right_down = (corner_right - corner_top) / (corner_right - corner_top).norm()
 
     pt1 = corner_left + vec_left_up * t
+    pt1s = corner_left + vec_left_up * (t + s)
     pt2 = corner_right + vec_bottom_left * t
+    pt2s = corner_right + vec_bottom_left * (t + s)
     pt3 = corner_top + vec_right_down * t
+    pt3s = corner_top + vec_right_down * (t + s)
 
     ax.plot(pt1.x, pt1.y, "o")
 
@@ -73,10 +76,15 @@ def main():
     cut_top.plot(ax=ax, lims=lims, label="top")
     cut_top2.plot(ax=ax, lims=lims, label="top2")
 
-    # pt3 = cut_lower.intersect(line_right)
-    # ax.plot(pt3.x, pt3.y, "o")
+    assert np.allclose(cut_lower.grads["t"], cut_lower2.grads["t"])
 
-    # print("pt3 grads", pt3.grads)
+    tri_lr = cut_lower2.intersect(cut_right2)
+    tri_ll = cut_lower2.intersect(cut_top2)
+    tri_t = cut_top2.intersect(cut_right2)
+
+    plt.plot(tri_lr.x, tri_lr.y, "o", label="tri_lr")
+    plt.plot(tri_ll.x, tri_ll.y, "o", label="tri_ll")
+    plt.plot(tri_t.x, tri_t.y, "o", label="tri_t")
 
     plt.legend()
     plt.xlim((-0.05, 2.05))
