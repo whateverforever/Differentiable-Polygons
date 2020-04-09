@@ -1,5 +1,7 @@
 import numpy as np  # type:ignore
 import matplotlib.pyplot as plt  # type:ignore
+from matplotlib.path import Path  # type:ignore
+import matplotlib.patches as patches  # type:ignore
 
 from main import Line, Vector, Point, Scalar, Param
 
@@ -103,6 +105,50 @@ def main():
     plt.xlim((-0.05, 2.05))
     plt.ylim((-0.05, 1.8))
     plt.show()
+
+    draw_polygons([[corner_left, pt1, pt1i, tri_lr, pt2s, corner_left]])
+
+
+def draw_polygons(polygons, ax=None, title=None, debug=False):
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    for poly in polygons:
+        points2D = [(point.x, point.y) for point in poly]
+
+        codes = []
+        codes.append(Path.MOVETO)
+        for i in range(len(poly) - 2):
+            codes.append(Path.LINETO)
+        codes.append(Path.CLOSEPOLY)
+
+        facecolor = "orange"
+
+        if debug:
+            red = np.random.uniform(0, 1)
+            green = np.random.uniform(0, 1)
+            blue = np.random.uniform(0, 1)
+
+            facecolor = [red, green, blue, 0.5]
+            textcolor = [red * 0.75, green * 0.75, blue * 0.75, 1.0]
+
+            for i, pt in enumerate(points2D):
+                ax.text(*pt, i, {"color": textcolor})
+            ax.scatter(*zip(*points2D), c=[textcolor])
+
+        path = Path(points2D, codes)
+        patch = patches.PathPatch(path, facecolor=facecolor, lw=0.25)
+        ax.add_patch(patch)
+
+    ax.set_xlim(-1.5, 3.5)
+    ax.set_ylim(-1.5, 3.5)
+    ax.axis("equal")
+
+    if title is not None:
+        ax.set_title(title)
+
+    if fig:
+        plt.show()
 
 
 if __name__ == "__main__":
