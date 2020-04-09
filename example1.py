@@ -145,7 +145,7 @@ def main():
         [point.mirror_across_line(line_top) for point in poly] for poly in lower_half
     ]
 
-    draw_polygons([*lower_half, *upper_half])
+    draw_polygons([*lower_half, *upper_half], draw_grads=["l"])
 
     # connect flank_lower and flank_lower_l
     abc = join_two_polygons(flank_lower, flank_lower_l)
@@ -246,7 +246,9 @@ def join_two_polygons(poly1, poly2):
             curr_vert_idx = idx_in_other
 
 
-def draw_polygons(polygons, ax=None, title=None, debug=False):
+def draw_polygons(
+    polygons, ax=None, title=None, debug=False, draw_grads: ty.List[str] = None
+):
     if ax is None:
         fig, ax = plt.subplots()
 
@@ -281,6 +283,21 @@ def draw_polygons(polygons, ax=None, title=None, debug=False):
         path = Path(points2D, codes)
         patch = patches.PathPatch(path, facecolor=facecolor, lw=0.25)
         ax.add_patch(patch)
+
+    if draw_grads is not None:
+        for poly in polygons:
+            for point in poly:
+                assert isinstance(point, Point)
+
+                for grad_name in draw_grads:
+                    if grad_name not in point.grads:
+                        continue
+
+                    plt.plot(
+                        [point.x, point.x + point.grads[grad_name][0][0]],
+                        [point.y, point.y + point.grads[grad_name][1][0]],
+                        c="k",
+                    )
 
     ax.set_xlim(-1.5, 3.5)
     ax.set_ylim(-1.5, 3.5)
