@@ -1,5 +1,6 @@
 import copy
 import typing as ty
+import warnings
 
 import numpy as np  # type:ignore
 import matplotlib.pyplot as plt  # type:ignore
@@ -124,18 +125,19 @@ def main():
 
     cell_bottom = [flank_lower, flank_right, flank_top, triangle]
 
-    lower_half = []
-    cell_l = [
-        [point.mirror_across_line(line_left) for point in poly] for poly in cell_bottom
-    ]
-    lower_half.extend(cell_l)
+    lower_half = [*cell_bottom]
+    lower_half.extend(
+        [
+            [point.mirror_across_line(line_left) for point in poly]
+            for poly in cell_bottom
+        ]
+    )
     lower_half.extend(
         [
             [point.mirror_across_line(line_right) for point in poly]
             for poly in cell_bottom
         ]
     )
-    lower_half.extend(cell_bottom)
 
     # TODO: This doesn't work atm, since Point.y is not a gradient carrier
     # line_top = Line(0, corner_top.y)
@@ -145,12 +147,15 @@ def main():
         [point.mirror_across_line(line_top) for point in poly] for poly in lower_half
     ]
 
-    draw_polygons([*lower_half, *upper_half], draw_grads=["l"])
+    draw_polygons([*lower_half, *upper_half], draw_grads=["l"], debug=True)
 
     # connect flank_lower and flank_lower_l
-    abc = join_two_polygons(flank_lower, flank_lower_l)
+    # abc = join_two_polygons(flank_lower, flank_lower_l)
+    # draw_polygons([abc])
 
-    draw_polygons([abc])
+    all_unified = join_polygons([*lower_half, *upper_half])
+
+    draw_polygons(all_unified)
 
 
 def is_oriented_ccw(poly: ty.List[Point]) -> bool:
@@ -183,26 +188,91 @@ def flip_orientation(poly: ty.List[Point]) -> ty.List[Point]:
     return list(reversed(poly))
 
 
+def join_polygons(multipoly: ty.List[ty.List[Point]]) -> ty.List[ty.List[Point]]:
+    # go through all poly pairs
+    # share vertex? -> unify and add
+    # note all lone polys
+    # return all lone polys and all unified polys
+
+    visited_pairs = []
+    out_multipoly = []
+    lone_polys = copy.copy(multipoly)
+    for ip1, poly1 in enumerate(multipoly):
+        for ip2, poly2 in enumerate(multipoly):
+            pair = set([ip1, ip2])
+
+            if ip1 == ip2 or pair in visited_pairs:
+                continue
+            visited_pairs.append(pair)
+
+            poly1_taken = lone_polys[ip1] is None
+            poly2_taken = lone_polys[ip2] is None
+
+            if poly1_taken or poly2_taken:
+                continue
+
+            if num_shared_verts(poly1, poly2) >= 2:
+                print("what", ip1, ip2)
+
+                joined = join_two_polygons(poly1, poly2)
+                out_multipoly.append(joined)
+
+                lone_polys[ip1] = None
+                lone_polys[ip2] = None
+
+    lone_polys = [poly for poly in lone_polys if poly is not None]
+    draw_polygons(lone_polys, title="Lone Polys!")
+    out_multipoly.extend(lone_polys)
+
+    visited_pairs = []
+    for ip1, poly1 in enumerate(out_multipoly):
+        for ip2, poly2 in enumerate(out_multipoly):
+            pair = set([ip1, ip2])
+
+            if ip1 == ip2 or pair in visited_pairs:
+                continue
+            visited_pairs.append(pair)
+
+            if num_shared_verts(poly1, poly2) >= 2:
+                warnings.warn("Still some shared polys leftover. Recursing..")
+
+                return join_polygons(out_multipoly)
+
+    return out_multipoly
+
+
+def num_shared_verts(poly1: ty.List[Point], poly2: ty.List[Point]) -> int:
+    nshared = 0
+
+    for point in poly1:
+        if vert_exists_in(point, poly2) is not False:
+            nshared += 1
+
+    return nshared
+
+
+def vert_exists_in(vert: Point, other_poly: ty.List[Point]) -> ty.Union[int, bool]:
+    shared_points = [
+        idx
+        for idx, point in enumerate(other_poly)
+        if np.allclose(vert.as_numpy(), point.as_numpy())
+    ]
+
+    if len(shared_points) == 0:
+        return False
+
+    return int(shared_points[0])
+
+
 def join_two_polygons(poly1, poly2):
     poly1 = copy.deepcopy(poly1)
     poly2 = copy.deepcopy(poly2)
 
-    if same_orientation(poly1, poly2):
+    if not same_orientation(poly1, poly2):
         poly2 = flip_orientation(poly2)
+        print("Had to flip one")
 
     in_polys = [poly1, poly2]
-
-    def vert_exists_in(vert: Point, other_poly: ty.List[Point]):
-        shared_points = [
-            idx
-            for idx, point in enumerate(other_poly)
-            if np.allclose(vert.as_numpy(), point.as_numpy())
-        ]
-
-        if len(shared_points) == 0:
-            return False
-
-        return int(shared_points[0])
 
     def vert_exists_in_other(poly_idx, vert_idx):
         other_poly_idx = 1 if poly_idx == 0 else 0
@@ -249,6 +319,7 @@ def join_two_polygons(poly1, poly2):
 def draw_polygons(
     polygons, ax=None, title=None, debug=False, draw_grads: ty.List[str] = None
 ):
+    fig = None
     if ax is None:
         fig, ax = plt.subplots()
 
