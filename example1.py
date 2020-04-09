@@ -86,6 +86,19 @@ def main():
     plt.plot(tri_ll.x, tri_ll.y, "o", label="tri_ll")
     plt.plot(tri_t.x, tri_t.y, "o", label="tri_t")
 
+    pt1i_ = cut_lower.intersect(cut_right2)
+    pt1i = pt1i_ - ((pt1i_ - pt1) / (pt1i_ - pt1).norm()) * s
+
+    pt2i_ = cut_right.intersect(cut_top2)
+    pt2i = pt2i_ - ((pt2i_ - pt2) / (pt2i_ - pt2).norm()) * s
+
+    pt3i_ = cut_top.intersect(cut_lower2)
+    pt3i = pt3i_ - ((pt3i_ - pt3) / (pt3i_ - pt3).norm()) * s
+
+    plt.plot(pt1i.x, pt1i.y, "o", label="pt1i")
+    plt.plot(pt2i.x, pt2i.y, "o", label="pt2i")
+    plt.plot(pt3i.x, pt3i.y, "o", label="pt3i")
+
     plt.legend()
     plt.xlim((-0.05, 2.05))
     plt.ylim((-0.05, 1.8))
