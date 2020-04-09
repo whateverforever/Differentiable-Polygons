@@ -111,11 +111,28 @@ def main():
     flank_top = [corner_top, pt3, pt3i, tri_ll, pt1s, corner_top]
     triangle = [tri_ll, tri_lr, tri_t, tri_ll]
 
-    flank_lower_l = [point.mirror_across_line(line_left) for point in flank_lower]
+    cell_bottom = [flank_lower, flank_right, flank_top, triangle]
 
-    draw_polygons([flank_lower_l, flank_lower, flank_right, flank_top, triangle])
+    lower_half = [
+        [point.mirror_across_line(line_left) for point in poly] for poly in cell_bottom
+    ]
+    lower_half.extend(
+        [
+            [point.mirror_across_line(line_right) for point in poly]
+            for poly in cell_bottom
+        ]
+    )
+    lower_half.extend(cell_bottom)
 
-    assert np.allclose(flank_lower_l[1].grads["l"], flank_lower[1].grads["l"])
+    # TODO: This doesn't work atm, since Point.y is not a gradient carrier
+    # line_top = Line(0, corner_top.y)
+    line_top = Line(0, 0).translate(corner_top)
+
+    upper_half = [
+        [point.mirror_across_line(line_top) for point in poly] for poly in lower_half
+    ]
+
+    draw_polygons([*lower_half, *upper_half])
 
 
 def draw_polygons(polygons, ax=None, title=None, debug=False):
