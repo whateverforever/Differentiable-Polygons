@@ -115,7 +115,16 @@ def main():
     flank_lower = Polygon([corner_left, pt1, pt1i, tri_lr, pt2s])
     flank_right = Polygon([corner_right, pt2, pt2i, tri_t, pt3s])
     flank_top = Polygon([corner_top, pt3, pt3i, tri_ll, pt1s])
-    triangle = Polygon([tri_ll, tri_lr, tri_t])
+    triangle_pre = Polygon([tri_ll, tri_lr, tri_t])
+    triangle = triangle_pre.rotate(Point(0, 0), Scalar(np.radians(-10)))
+
+    flank_lower = flank_lower.translate(triangle.points[1] - triangle_pre.points[1])
+    flank_right = flank_right.translate(triangle.points[2] - triangle_pre.points[2])
+    flank_top = flank_top.translate(triangle.points[0] - triangle_pre.points[0])
+
+    line_left = Line.make_from_points(flank_top.points[0], flank_top.points[-1])
+    line_right = Line.make_from_points(flank_right.points[0], flank_right.points[-1])
+    corner_top = line_left.intersect(line_right)
 
     cell_bottom = MultiPolygon([flank_lower, flank_right, flank_top, triangle])
     cell_left = cell_bottom.mirror_across_line(line_left)
@@ -129,7 +138,7 @@ def main():
     hex_connected = hex_disconnected.join_polygons()
 
     hex_disconnected.draw(draw_grads=["l"], debug=True)
-    hex_connected.draw(draw_grads=["l"])
+    hex_connected.draw()
 
 
 # TODO: Turn into gradient carrier, once it becomes necessary
@@ -165,6 +174,18 @@ class Polygon:
     def mirror_across_line(poly: Polygon, line: Line) -> Polygon:
         points = poly.points
         points_new = [point.mirror_across_line(line) for point in points]
+
+        return Polygon(points_new)
+
+    def translate(poly: Polygon, vec: Vector) -> Polygon:
+        points = poly.points
+        points_new = [point.translate(vec) for point in points]
+
+        return Polygon(points_new)
+
+    def rotate(poly: Polygon, origin: Point, angle: Scalar) -> Polygon:
+        points = poly.points
+        points_new = [point.rotate(origin, angle) for point in points]
 
         return Polygon(points_new)
 
