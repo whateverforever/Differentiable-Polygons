@@ -436,12 +436,11 @@ class MultiPolygon:
                 for i, pt in enumerate(points2D):
                     ax.text(*pt, i, {"color": textcolor})
                 ax.scatter(*zip(*points2D), c=[textcolor])
-
-            ax.text(
-                *np.mean(points2D, axis=0),
-                "poly {}\n({} verts)".format(ipoly, len(points2D)),
-                {"color": textcolor}
-            )
+                ax.text(
+                    *np.mean(points2D, axis=0),
+                    "poly {}\n({} verts)".format(ipoly, len(points2D)),
+                    {"color": textcolor}
+                )
 
             if not np.allclose(points2D[-1], points2D[0]):
                 points2D.append(points2D[0])
