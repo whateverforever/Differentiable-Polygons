@@ -278,12 +278,12 @@ class Polygon:
         nshared = 0
 
         for point in poly1.points:
-            if poly2.contains_vert(point) is not False:
+            if poly2.has_vertex(point) is not False:
                 nshared += 1
 
         return nshared
 
-    def contains_vert(poly: Polygon, vert: Point) -> Union[int, bool]:
+    def has_vertex(poly: Polygon, vert: Point) -> Union[int, bool]:
         shared_points = [
             idx
             for idx, point in enumerate(poly._points)
@@ -310,7 +310,7 @@ class Polygon:
             other_poly = in_polys[other_poly_idx]
             vert = in_polys[poly_idx].points[vert_idx]
 
-            return other_poly.contains_vert(vert)
+            return other_poly.has_vertex(vert)
 
         start_vert = -1
 
@@ -331,7 +331,7 @@ class Polygon:
                 curr_vert_idx = 0
 
             if (
-                out_poly.contains_vert(in_polys[curr_poly_idx].points[curr_vert_idx])
+                out_poly.has_vertex(in_polys[curr_poly_idx].points[curr_vert_idx])
                 is not False
             ):
                 return out_poly
