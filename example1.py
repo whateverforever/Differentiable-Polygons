@@ -254,7 +254,7 @@ class Polygon:
             edge = (pt2.x - pt1.x) * (pt2.y + pt1.y)
             edge_sum += edge
 
-        if not np.allclose(points[0].as_numpy(), points[-1].as_numpy()):
+        if not points[0].same_as(points[-1]):
             edge_sum += (points[0].x - points[-1].x) * (points[0].y + points[-1].y)
 
         return edge_sum < 0
@@ -285,9 +285,7 @@ class Polygon:
 
     def has_vertex(poly: Polygon, vert: Point) -> Union[int, bool]:
         shared_points = [
-            idx
-            for idx, point in enumerate(poly._points)
-            if np.allclose(vert.as_numpy(), point.as_numpy())
+            idx for idx, point in enumerate(poly._points) if vert.same_as(point)
         ]
 
         if len(shared_points) == 0:
