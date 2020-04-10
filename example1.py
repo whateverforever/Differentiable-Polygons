@@ -170,6 +170,14 @@ def main():
             hex_connected.polygons[2].points[4],
         ]
     )
+    inside_pt_br = np.mean(
+        [
+            hex_connected.polygons[2].points[3].as_numpy(),
+            hex_connected.polygons[0].points[17].as_numpy(),
+        ],
+        axis=0,
+    ).flatten()
+
     hole_outer_bl = Polygon(
         [
             hex_connected.polygons[1].points[5],
@@ -182,7 +190,11 @@ def main():
             hex_connected.polygons[0].points[3],
         ]
     )
-    holes = MultiPolygon(
+
+    # hex_connected.polygons[0].points[2]
+    # hex_connected.polygons[1].points[7]
+
+    holepoly = MultiPolygon(
         [
             hole_inner_br,
             hole_inner_br.mirror_across_line(line_horiz_top),
@@ -193,13 +205,25 @@ def main():
         ]
     )
 
-    fig, axes = plt.subplots(ncols=3)
+    holepts = [
+        np.mean(
+            [poly.points[2].as_numpy(), poly.points[6].as_numpy()], axis=0
+        ).flatten()
+        for poly in holepoly.polygons
+    ]
+    print("holepts", holepts)
 
+    fig, axes = plt.subplots(ncols=3)
     hex_disconnected.draw(ax=axes[0], draw_grads=["l"], debug=True)
     hex_connected.draw(ax=axes[1], debug=True)
-    holes.draw(ax=axes[1])
+    holepoly.draw(ax=axes[2])
+
+    axes[1].scatter(*zip(*holepts), marker="x")
+    axes[2].scatter(*zip(*holepts), marker="x")
 
     plt.show()
+
+    return hex_connected.as_numpy(close=True), holepoly.as_numpy(close=True)
 
 
 # TODO: Turn into gradient carrier, once it becomes necessary
