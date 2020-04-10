@@ -465,7 +465,7 @@ class MultiPolygon:
                         if grad_name not in point.grads:
                             continue
 
-                        plt.plot(
+                        ax.plot(
                             [point.x, point.x + point.grads[grad_name][0][0]],
                             [point.y, point.y + point.grads[grad_name][1][0]],
                             c="k",
