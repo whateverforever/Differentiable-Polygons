@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import List, Union
+from typing import List, Union, Dict
 import warnings
 
 import numpy as np  # type:ignore
@@ -170,13 +170,44 @@ class Polygon:
             points = []
 
         self._points: List[Point] = points
+        self._bounding_box: Union[Dict[str, float], None] = None
 
     @property
     def points(poly: Polygon) -> List[Point]:
         return copy.copy(poly._points)
 
+    @property
+    def bounding_box(self) -> Dict[str, float]:
+        if self._bounding_box is None:
+            xs = [point.x for point in self._points]
+            ys = [point.y for point in self._points]
+
+            self._bounding_box = {
+                "minx": np.min(xs),
+                "maxx": np.max(xs),
+                "miny": np.min(ys),
+                "maxy": np.max(ys),
+            }
+
+        return copy.copy(self._bounding_box)
+
     def copy(self):
         return Polygon(copy.deepcopy(self._points))
+
+    def bounding_box_intersects(poly1: Polygon, poly2: Polygon) -> bool:
+        bb1 = poly1.bounding_box
+        bb2 = poly2.bounding_box
+
+        if (
+            False
+            or bb1["minx"] > bb2["maxx"]
+            or bb1["miny"] > bb2["maxy"]
+            or bb1["maxx"] < bb2["minx"]
+            or bb1["maxy"] < bb2["miny"]
+        ):
+            return False
+
+        return True
 
     def draw(self: Polygon, **kwargs):
         mpoly = MultiPolygon([self])
@@ -241,6 +272,9 @@ class Polygon:
         return new_poly
 
     def num_verts_shared_with(poly1: Polygon, poly2: Polygon) -> int:
+        if not poly1.bounding_box_intersects(poly2):
+            return 0
+
         nshared = 0
 
         for point in poly1.points:
