@@ -157,8 +157,48 @@ def main():
     hex_disconnected = MultiPolygon.FromMultipolygons([lower_half, upper_half])
     hex_connected = hex_disconnected.join_polygons()
 
-    hex_disconnected.draw(draw_grads=["l"], debug=True)
-    hex_connected.draw()
+    hole_inner_br = Polygon(
+        [
+            hex_connected.polygons[0].points[15],
+            hex_connected.polygons[0].points[16],
+            hex_connected.polygons[0].points[17],
+            hex_connected.polygons[0].points[0],
+            hex_connected.polygons[0].points[1],
+            hex_connected.polygons[2].points[2],
+            hex_connected.polygons[2].points[3],
+            hex_connected.polygons[2].points[4],
+        ]
+    )
+    hole_outer_bl = Polygon(
+        [
+            hex_connected.polygons[1].points[5],
+            hex_connected.polygons[1].points[6],
+            hex_connected.polygons[1].points[7],
+            hex_connected.polygons[1].points[0],
+            hex_connected.polygons[1].points[1],
+            hex_connected.polygons[0].points[1],
+            hex_connected.polygons[0].points[2],
+            hex_connected.polygons[0].points[3],
+        ]
+    )
+    holes = MultiPolygon(
+        [
+            hole_inner_br,
+            hole_inner_br.mirror_across_line(line_horiz_top),
+            hole_inner_br.mirror_across_line(line_left),
+            hole_outer_bl,
+            hole_outer_bl.mirror_across_line(line_horiz_top),
+            hole_outer_bl.mirror_across_line(line_right),
+        ]
+    )
+
+    fig, axes = plt.subplots(ncols=3)
+
+    hex_disconnected.draw(ax=axes[0], draw_grads=["l"], debug=True)
+    hex_connected.draw(ax=axes[1], debug=True)
+    holes.draw(ax=axes[1])
+
+    plt.show()
 
 
 # TODO: Turn into gradient carrier, once it becomes necessary
