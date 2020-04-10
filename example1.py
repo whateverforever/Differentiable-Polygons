@@ -17,6 +17,7 @@ def main():
     t = Param("t", 0.15)
     l = Param("l", 2.0)
     theta = Param("theta", np.radians(10))
+    opening_phi = Param("phi", np.radians(-10))
     lower_angles = Param("lower_angles", np.radians(60))
 
     corner_left = Point(0, 0)
@@ -116,7 +117,7 @@ def main():
     flank_right = Polygon([corner_right, pt2, pt2i, tri_t, pt3s])
     flank_top = Polygon([corner_top, pt3, pt3i, tri_ll, pt1s])
     triangle_pre = Polygon([tri_ll, tri_lr, tri_t])
-    triangle = triangle_pre.rotate(Point(0, 0), Scalar(np.radians(-10)))
+    triangle = triangle_pre.rotate(Point(0, 0), opening_phi)
 
     flank_lower = flank_lower.translate(triangle.points[1] - triangle_pre.points[1])
     flank_right = flank_right.translate(triangle.points[2] - triangle_pre.points[2])
