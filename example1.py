@@ -217,6 +217,9 @@ class Polygon:
     def points(poly: Polygon) -> List[Point]:
         return copy.copy(poly._points)
 
+    def as_numpy(poly: Polygon) -> np.ndarray:
+        return np.array([point.as_numpy().flatten() for point in poly.points])
+
     @property
     def bounding_box(self) -> Dict[str, float]:
         if self._bounding_box is None:
@@ -406,6 +409,9 @@ class MultiPolygon:
     @property
     def polygons(self):
         return copy.copy(self._polygons)
+
+    def as_numpy(mpoly: MultiPolygon):
+        return np.array([poly.as_numpy() for poly in mpoly.polygons])
 
     def draw(
         mpoly: MultiPolygon,
