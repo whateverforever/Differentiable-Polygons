@@ -124,7 +124,27 @@ def main():
 
     line_left = Line.make_from_points(flank_top.points[0], flank_top.points[-1])
     line_right = Line.make_from_points(flank_right.points[0], flank_right.points[-1])
+    line_horiz = Line.make_from_points(flank_lower.points[0], flank_lower.points[-1])
     corner_top = line_left.intersect(line_right)
+
+    ## Infill
+    line_left_inner = Line.make_from_points(flank_top.points[1], flank_top.points[2])
+    flank_top._points[0] = corner_top
+    flank_top._points[1] = line_left_inner.intersect(line_right)
+
+    line_bottom_inner = Line.make_from_points(
+        flank_lower.points[1], flank_lower.points[2]
+    )
+    flank_lower._points[0] = line_horiz.intersect(line_left)
+    flank_lower._points[1] = line_bottom_inner.intersect(line_left)
+
+    line_right_inner = Line.make_from_points(
+        flank_right.points[1], flank_right.points[2]
+    )
+    flank_right._points[0] = line_right.intersect(line_horiz)
+    flank_right._points[1] = line_right_inner.intersect(line_horiz)
+
+    ## /Infill
 
     cell_bottom = MultiPolygon([flank_lower, flank_right, flank_top, triangle])
     cell_left = cell_bottom.mirror_across_line(line_left)
