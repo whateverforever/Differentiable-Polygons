@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import copy
-import typing as ty
+from typing import List, Union
 import warnings
 
 import numpy as np  # type:ignore
@@ -7,7 +9,7 @@ import matplotlib.pyplot as plt  # type:ignore
 from matplotlib.path import Path  # type:ignore
 import matplotlib.patches as patches  # type:ignore
 
-from main import Line, Vector, Point, Scalar, Param
+from main import Line, Vector, Point, Scalar, Param, GradientCarrier
 
 
 def main():
@@ -110,271 +112,330 @@ def main():
     plt.ylim((-0.05, 1.8))
     plt.show()
 
-    # flank_lower = Polygon.MakeFromPoints([pt1, pt2, ...])
-    # flank_lower_l = flank_lower.mirror_across_line(line)
-    #
-    # doubleflank = flank_lower.connect_with_poly(flank_lower_l)
+    flank_lower = Polygon([corner_left, pt1, pt1i, tri_lr, pt2s])
+    flank_right = Polygon([corner_right, pt2, pt2i, tri_t, pt3s])
+    flank_top = Polygon([corner_top, pt3, pt3i, tri_ll, pt1s])
+    triangle = Polygon([tri_ll, tri_lr, tri_t])
 
-    flank_lower = [corner_left, pt1, pt1i, tri_lr, pt2s]
-    # tmp
-    flank_lower_l = [point.mirror_across_line(line_left) for point in flank_lower]
+    cell_bottom = MultiPolygon([flank_lower, flank_right, flank_top, triangle])
+    cell_left = cell_bottom.mirror_across_line(line_left)
+    cell_right = cell_bottom.mirror_across_line(line_right)
+    lower_half = MultiPolygon.FromMultipolygons([cell_bottom, cell_left, cell_right])
 
-    flank_right = [corner_right, pt2, pt2i, tri_t, pt3s]
-    flank_top = [corner_top, pt3, pt3i, tri_ll, pt1s]
-    triangle = [tri_ll, tri_lr, tri_t]
+    line_horiz_top = Line(0, 0).translate(corner_top)
+    upper_half = lower_half.mirror_across_line(line_horiz_top)
 
-    cell_bottom = [flank_lower, flank_right, flank_top, triangle]
+    hex_disconnected = MultiPolygon.FromMultipolygons([lower_half, upper_half])
+    hex_connected = hex_disconnected.join_polygons()
 
-    lower_half = [*cell_bottom]
-    lower_half.extend(
-        [
-            [point.mirror_across_line(line_left) for point in poly]
-            for poly in cell_bottom
+    hex_disconnected.draw(draw_grads=["l"], debug=True)
+    hex_connected.draw(draw_grads=["l"])
+
+
+# TODO: Turn into gradient carrier, once it becomes necessary
+class Polygon:
+    def __init__(self, points: List[Point] = None):
+        super().__init__()
+
+        if points is None:
+            points = []
+
+        self._points: List[Point] = points
+
+    @property
+    def points(poly: Polygon) -> List[Point]:
+        return copy.copy(poly._points)
+
+    def copy(self):
+        return Polygon(copy.deepcopy(self._points))
+
+    def draw(self: Polygon, **kwargs):
+        mpoly = MultiPolygon([self])
+        mpoly.draw(**kwargs)
+
+    def add_point(poly: Polygon, point: Point) -> Polygon:
+        if not isinstance(point, Point):
+            raise TypeError("Can't append anything else than a 'Point' to 'Polygon'")
+
+        points = poly.points
+        points.append(point)
+
+        return Polygon(points)
+
+    def mirror_across_line(poly: Polygon, line: Line) -> Polygon:
+        points = poly.points
+        points_new = [point.mirror_across_line(line) for point in points]
+
+        return Polygon(points_new)
+
+    def is_oriented_ccw(poly: Polygon) -> bool:
+        edge_sum = 0
+        points = poly.points
+
+        for i, pt in enumerate(points):
+            if i == 0:
+                continue
+
+            pt1 = points[i - 1]
+            pt2 = points[i]
+
+            edge = (pt2.x - pt1.x) * (pt2.y + pt1.y)
+            edge_sum += edge
+
+        if not np.allclose(points[0].as_numpy(), points[-1].as_numpy()):
+            edge_sum += (points[0].x - points[-1].x) * (points[0].y + points[-1].y)
+
+        return edge_sum < 0
+
+    def same_orientation_as(poly1: Polygon, poly2: Polygon) -> bool:
+        orient1 = poly1.is_oriented_ccw()
+        orient2 = poly2.is_oriented_ccw()
+
+        return orient1 == orient2
+
+    def flip_orientation(poly: Polygon) -> Polygon:
+        new_poly = poly.copy()
+        new_poly._points = list(reversed(poly._points))
+
+        return new_poly
+
+    def num_verts_shared_with(poly1: Polygon, poly2: Polygon) -> int:
+        nshared = 0
+
+        for point in poly1.points:
+            if poly2.contains_vert(point) is not False:
+                nshared += 1
+
+        return nshared
+
+    def contains_vert(poly: Polygon, vert: Point) -> Union[int, bool]:
+        shared_points = [
+            idx
+            for idx, point in enumerate(poly._points)
+            if np.allclose(vert.as_numpy(), point.as_numpy())
         ]
-    )
-    lower_half.extend(
-        [
-            [point.mirror_across_line(line_right) for point in poly]
-            for poly in cell_bottom
-        ]
-    )
 
-    # TODO: This doesn't work atm, since Point.y is not a gradient carrier
-    # line_top = Line(0, corner_top.y)
-    line_top = Line(0, 0).translate(corner_top)
+        if len(shared_points) == 0:
+            return False
 
-    upper_half = [
-        [point.mirror_across_line(line_top) for point in poly] for poly in lower_half
-    ]
+        return int(shared_points[0])
 
-    draw_polygons([*lower_half, *upper_half], draw_grads=["l"], debug=True)
+    def connect_to_poly(poly1: Polygon, poly2: Polygon):
+        poly1 = poly1.copy()
+        poly2 = poly2.copy()
 
-    # connect flank_lower and flank_lower_l
-    # abc = join_two_polygons(flank_lower, flank_lower_l)
-    # draw_polygons([abc])
+        if not poly1.same_orientation_as(poly2):
+            poly2 = poly2.flip_orientation()
 
-    all_unified = join_polygons([*lower_half, *upper_half])
+        in_polys = [poly1, poly2]
 
-    draw_polygons(all_unified, draw_grads=["l"])
+        def vert_exists_in_other(poly_idx, vert_idx):
+            other_poly_idx = 1 if poly_idx == 0 else 0
 
+            other_poly = in_polys[other_poly_idx]
+            vert = in_polys[poly_idx].points[vert_idx]
 
-def is_oriented_ccw(poly: ty.List[Point]) -> bool:
-    edge_sum = 0
+            return other_poly.contains_vert(vert)
 
-    for i, pt in enumerate(poly):
-        if i == 0:
-            continue
+        start_vert = -1
 
-        pt1 = poly[i - 1]
-        pt2 = poly[i]
+        for i, _ in enumerate(poly1.points):
+            if vert_exists_in_other(0, i) is False:
+                start_vert = i
+                break
 
-        edge = (pt2.x - pt1.x) * (pt2.y + pt1.y)
-        edge_sum += edge
+        curr_vert_idx: int = start_vert
+        curr_poly_idx: int = 0
 
-    if not np.allclose(poly[0].as_numpy(), poly[-1].as_numpy()):
-        edge_sum += (poly[0].x - poly[-1].x) * (poly[0].y + poly[-1].y)
+        out_poly: Polygon = Polygon([in_polys[curr_poly_idx].points[curr_vert_idx]])
 
-    return edge_sum < 0
+        while True:
+            if curr_vert_idx + 1 < len(in_polys[curr_poly_idx].points):
+                curr_vert_idx += 1
+            else:
+                curr_vert_idx = 0
 
+            if (
+                out_poly.contains_vert(in_polys[curr_poly_idx].points[curr_vert_idx])
+                is not False
+            ):
+                return out_poly
 
-def same_orientation(poly1: ty.List[Point], poly2: ty.List[Point]) -> bool:
-    orient1 = is_oriented_ccw(poly1)
-    orient2 = is_oriented_ccw(poly2)
+            out_poly = out_poly.add_point(in_polys[curr_poly_idx].points[curr_vert_idx])
 
-    return orient1 == orient2
+            idx_in_other = vert_exists_in_other(curr_poly_idx, curr_vert_idx)
+            if idx_in_other is False:
+                pass
+            else:
+                curr_poly_idx = 1 if curr_poly_idx == 0 else 0
+                curr_vert_idx = idx_in_other
 
 
-def flip_orientation(poly: ty.List[Point]) -> ty.List[Point]:
-    return list(reversed(poly))
+# TODO: Turn into gradient carrier, once it becomes necessary
+class MultiPolygon:
+    def __init__(self, polygons: List[Polygon] = None):
+        super().__init__()
 
+        if polygons is None:
+            polygons = []
 
-def join_polygons(multipoly: ty.List[ty.List[Point]]) -> ty.List[ty.List[Point]]:
-    """
-    Takes a list of polygons, some of which might be connectable. It then recursively
-    tries to match pairs of two together. As such, it can also resolve connections
-    of more than two polygons.
-    """
-    visited_pairs = []
-    out_multipoly = []
-    lone_polys = copy.copy(multipoly)
-    for ip1, poly1 in enumerate(multipoly):
-        for ip2, poly2 in enumerate(multipoly):
-            pair = set([ip1, ip2])
+        self._polygons = polygons
 
-            if ip1 == ip2 or pair in visited_pairs:
-                continue
-            visited_pairs.append(pair)
+    @staticmethod
+    def FromMultipolygons(mpolys: List[MultiPolygon]) -> MultiPolygon:
+        all_polygons = []
+        for mpoly in mpolys:
+            all_polygons.extend(mpoly.polygons)
 
-            poly1_taken = lone_polys[ip1] is None
-            poly2_taken = lone_polys[ip2] is None
+        return MultiPolygon(all_polygons)
 
-            if poly1_taken or poly2_taken:
-                continue
+    @property
+    def polygons(self):
+        return copy.copy(self._polygons)
 
-            if num_shared_verts(poly1, poly2) >= 2:
-                joined = join_two_polygons(poly1, poly2)
-                out_multipoly.append(joined)
+    def draw(
+        mpoly: MultiPolygon,
+        ax=None,
+        title=None,
+        debug=False,
+        draw_grads: List[str] = None,
+    ):
+        fig = None
+        if ax is None:
+            fig, ax = plt.subplots()
 
-                lone_polys[ip1] = None
-                lone_polys[ip2] = None
+        polygons = mpoly._polygons
 
-    lone_polys = [poly for poly in lone_polys if poly is not None]
-    out_multipoly.extend(lone_polys)
-
-    # If we have multiple polygons connected together, one pass alone won't be
-    # enough to connect all of them together --> recurse
-    visited_pairs = []
-    for ip1, poly1 in enumerate(out_multipoly):
-        for ip2, poly2 in enumerate(out_multipoly):
-            pair = set([ip1, ip2])
-
-            if ip1 == ip2 or pair in visited_pairs:
-                continue
-            visited_pairs.append(pair)
-
-            if num_shared_verts(poly1, poly2) >= 2:
-                return join_polygons(out_multipoly)
-
-    return out_multipoly
-
-
-def num_shared_verts(poly1: ty.List[Point], poly2: ty.List[Point]) -> int:
-    nshared = 0
-
-    for point in poly1:
-        if vert_exists_in(point, poly2) is not False:
-            nshared += 1
-
-    return nshared
-
-
-def vert_exists_in(vert: Point, other_poly: ty.List[Point]) -> ty.Union[int, bool]:
-    shared_points = [
-        idx
-        for idx, point in enumerate(other_poly)
-        if np.allclose(vert.as_numpy(), point.as_numpy())
-    ]
-
-    if len(shared_points) == 0:
-        return False
-
-    return int(shared_points[0])
-
-
-def join_two_polygons(poly1, poly2):
-    poly1 = copy.deepcopy(poly1)
-    poly2 = copy.deepcopy(poly2)
-
-    if not same_orientation(poly1, poly2):
-        poly2 = flip_orientation(poly2)
-
-    in_polys = [poly1, poly2]
-
-    def vert_exists_in_other(poly_idx, vert_idx):
-        other_poly_idx = 1 if poly_idx == 0 else 0
-
-        other_poly = in_polys[other_poly_idx]
-        vert = in_polys[poly_idx][vert_idx]
-
-        return vert_exists_in(vert, other_poly)
-
-    start_vert = None
-
-    for i, _ in enumerate(poly1):
-        if vert_exists_in_other(0, i) is False:
-            start_vert = i
-            break
-
-    curr_vert_idx: int = start_vert
-    curr_poly_idx: int = 0
-
-    out_poly: ty.List[Point] = [in_polys[curr_poly_idx][curr_vert_idx]]
-
-    while True:
-        if curr_vert_idx + 1 < len(in_polys[curr_poly_idx]):
-            curr_vert_idx += 1
-        else:
-            curr_vert_idx = 0
-
-        if (
-            vert_exists_in(in_polys[curr_poly_idx][curr_vert_idx], out_poly)
-            is not False
-        ):
-            return np.array(out_poly)
-
-        out_poly.append(in_polys[curr_poly_idx][curr_vert_idx])
-
-        idx_in_other = vert_exists_in_other(curr_poly_idx, curr_vert_idx)
-        if idx_in_other is False:
-            pass
-        else:
-            curr_poly_idx = 1 if curr_poly_idx == 0 else 0
-            curr_vert_idx = idx_in_other
-
-
-def draw_polygons(
-    polygons, ax=None, title=None, debug=False, draw_grads: ty.List[str] = None
-):
-    fig = None
-    if ax is None:
-        fig, ax = plt.subplots()
-
-    for poly in polygons:
-        n = len(poly)
-        points2D = [(point.x, point.y) for point in poly]
-
-        if not np.allclose(points2D[-1], points2D[0]):
-            points2D.append(points2D[0])
-            n += 1
-
-        codes = []
-        codes.append(Path.MOVETO)
-        for i in range(n - 2):
-            codes.append(Path.LINETO)
-        codes.append(Path.CLOSEPOLY)
-
-        facecolor = "orange"
-
-        if debug:
-            red = np.random.uniform(0, 1)
-            green = np.random.uniform(0, 1)
-            blue = np.random.uniform(0, 1)
-
-            facecolor = [red, green, blue, 0.5]
-            textcolor = [red * 0.75, green * 0.75, blue * 0.75, 1.0]
-
-            for i, pt in enumerate(points2D):
-                ax.text(*pt, i, {"color": textcolor})
-            ax.scatter(*zip(*points2D), c=[textcolor])
-
-        path = Path(points2D, codes)
-        patch = patches.PathPatch(path, facecolor=facecolor, lw=0.25)
-        ax.add_patch(patch)
-
-    if draw_grads is not None:
         for poly in polygons:
-            for point in poly:
-                assert isinstance(point, Point)
+            n = len(poly._points)
+            points2D = [(point.x, point.y) for point in poly._points]
 
-                for grad_name in draw_grads:
-                    if grad_name not in point.grads:
-                        continue
+            if not np.allclose(points2D[-1], points2D[0]):
+                points2D.append(points2D[0])
+                n += 1
 
-                    plt.plot(
-                        [point.x, point.x + point.grads[grad_name][0][0]],
-                        [point.y, point.y + point.grads[grad_name][1][0]],
-                        c="k",
-                    )
+            codes = []
+            codes.append(Path.MOVETO)
+            for i in range(n - 2):
+                codes.append(Path.LINETO)
+            codes.append(Path.CLOSEPOLY)
 
-    ax.set_xlim(-1.5, 3.5)
-    ax.set_ylim(-1.5, 3.5)
-    ax.axis("equal")
+            facecolor = "orange"
 
-    if title is not None:
-        ax.set_title(title)
+            if debug:
+                red = np.random.uniform(0, 1)
+                green = np.random.uniform(0, 1)
+                blue = np.random.uniform(0, 1)
 
-    if fig:
-        plt.show()
+                facecolor = [red, green, blue, 0.5]
+                textcolor = [red * 0.75, green * 0.75, blue * 0.75, 1.0]
+
+                for i, pt in enumerate(points2D):
+                    ax.text(*pt, i, {"color": textcolor})
+                ax.scatter(*zip(*points2D), c=[textcolor])
+
+            path = Path(points2D, codes)
+            patch = patches.PathPatch(path, facecolor=facecolor, lw=0.25)
+            ax.add_patch(patch)
+
+        if draw_grads is not None:
+            for poly in polygons:
+                for point in poly.points:
+                    assert isinstance(point, Point)
+
+                    for grad_name in draw_grads:
+                        if grad_name not in point.grads:
+                            continue
+
+                        plt.plot(
+                            [point.x, point.x + point.grads[grad_name][0][0]],
+                            [point.y, point.y + point.grads[grad_name][1][0]],
+                            c="k",
+                        )
+
+        ax.set_xlim(-1.5, 3.5)
+        ax.set_ylim(-1.5, 3.5)
+        ax.axis("equal")
+
+        if title is not None:
+            ax.set_title(title)
+
+        if fig:
+            plt.show()
+
+    def add_polygons(mpoly: MultiPolygon, polys: List[Polygon]) -> MultiPolygon:
+        new_polys = mpoly.polygons
+        new_polys.extend(polys)
+
+        return MultiPolygon(new_polys)
+
+    def add_polygon(mpoly: MultiPolygon, poly: Polygon) -> MultiPolygon:
+        if not isinstance(poly, Polygon):
+            raise TypeError(
+                "Can't append anything else than a 'Polygon' to 'MultiPolygon'"
+            )
+
+        polys = mpoly.polygons
+        polys.append(poly)
+
+        return MultiPolygon(polys)
+
+    def mirror_across_line(mpoly: MultiPolygon, line: Line) -> MultiPolygon:
+        polygons = mpoly.polygons
+        polygons_new = [poly.mirror_across_line(line) for poly in polygons]
+
+        return MultiPolygon(polygons_new)
+
+    def join_polygons(multipoly: MultiPolygon) -> MultiPolygon:
+        """
+        Takes a list of polygons, some of which might be connectable. It then recursively
+        tries to match pairs of two together. As such, it can also resolve connections
+        of more than two polygons.
+        """
+        visited_pairs = []
+        out_multipoly = MultiPolygon()
+        lone_polys = multipoly.polygons
+        for ip1, poly1 in enumerate(multipoly._polygons):
+            for ip2, poly2 in enumerate(multipoly._polygons):
+                pair = set([ip1, ip2])
+
+                if ip1 == ip2 or pair in visited_pairs:
+                    continue
+                visited_pairs.append(pair)
+
+                poly1_taken = lone_polys[ip1] is None
+                poly2_taken = lone_polys[ip2] is None
+
+                if poly1_taken or poly2_taken:
+                    continue
+
+                if poly1.num_verts_shared_with(poly2) >= 2:
+                    joined = poly1.connect_to_poly(poly2)
+                    out_multipoly = out_multipoly.add_polygon(joined)
+
+                    lone_polys[ip1] = None
+                    lone_polys[ip2] = None
+
+        lone_polys = [poly for poly in lone_polys if poly is not None]
+        out_multipoly = out_multipoly.add_polygons(lone_polys)
+
+        # If we have multiple polygons connected together, one pass alone won't be
+        # enough to connect all of them together --> recurse
+        visited_pairs = []
+        for ip1, poly1 in enumerate(out_multipoly.polygons):
+            for ip2, poly2 in enumerate(out_multipoly.polygons):
+                pair = set([ip1, ip2])
+
+                if ip1 == ip2 or pair in visited_pairs:
+                    continue
+                visited_pairs.append(pair)
+
+                # There is at least one edge leftover where two polygons could be
+                # connected
+                if poly1.num_verts_shared_with(poly2) >= 2:
+                    return out_multipoly.join_polygons()
+
+        return out_multipoly
 
 
 if __name__ == "__main__":
