@@ -379,19 +379,9 @@ class MultiPolygon:
 
         polygons = mpoly._polygons
 
-        for poly in polygons:
+        for ipoly, poly in enumerate(polygons):
             n = len(poly._points)
             points2D = [(point.x, point.y) for point in poly._points]
-
-            if not np.allclose(points2D[-1], points2D[0]):
-                points2D.append(points2D[0])
-                n += 1
-
-            codes = []
-            codes.append(Path.MOVETO)
-            for i in range(n - 2):
-                codes.append(Path.LINETO)
-            codes.append(Path.CLOSEPOLY)
 
             facecolor = "orange"
 
@@ -406,6 +396,22 @@ class MultiPolygon:
                 for i, pt in enumerate(points2D):
                     ax.text(*pt, i, {"color": textcolor})
                 ax.scatter(*zip(*points2D), c=[textcolor])
+
+            ax.text(
+                *np.mean(points2D, axis=0),
+                "poly {}\n({} verts)".format(ipoly, len(points2D)),
+                {"color": textcolor}
+            )
+
+            if not np.allclose(points2D[-1], points2D[0]):
+                points2D.append(points2D[0])
+                n += 1
+
+            codes = []
+            codes.append(Path.MOVETO)
+            for i in range(n - 2):
+                codes.append(Path.LINETO)
+            codes.append(Path.CLOSEPOLY)
 
             path = Path(points2D, codes)
             patch = patches.PathPatch(path, facecolor=facecolor, lw=0.25)
