@@ -217,8 +217,13 @@ class Polygon:
     def points(poly: Polygon) -> List[Point]:
         return copy.copy(poly._points)
 
-    def as_numpy(poly: Polygon) -> np.ndarray:
-        return np.array([point.as_numpy().flatten() for point in poly.points])
+    def as_numpy(poly: Polygon, close=False) -> np.ndarray:
+        points = poly.points
+        if close:
+            if not points[-1].same_as(points[0]):
+                points.append(points[0])
+
+        return np.array([point.as_numpy().flatten() for point in points])
 
     @property
     def bounding_box(self) -> Dict[str, float]:
@@ -410,8 +415,8 @@ class MultiPolygon:
     def polygons(self):
         return copy.copy(self._polygons)
 
-    def as_numpy(mpoly: MultiPolygon):
-        return np.array([poly.as_numpy() for poly in mpoly.polygons])
+    def as_numpy(mpoly: MultiPolygon, close=False):
+        return np.array([poly.as_numpy(close=close) for poly in mpoly.polygons])
 
     def draw(
         mpoly: MultiPolygon,
