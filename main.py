@@ -5,11 +5,8 @@ import typing as ty
 import warnings
 
 import numpy as np  # type: ignore
-import matplotlib.pyplot as plt  # type: ignore
 
 from numbers import Number
-
-from scipy import optimize  # type: ignore
 
 
 class GradientCarrier:
@@ -18,10 +15,10 @@ class GradientCarrier:
 
     @property
     def grads(self):
-        return copy.deepcopy(self.gradients)
+        return copy.copy(self.gradients)
 
     def with_grads(self, grads):
-        self_copy = copy.deepcopy(self)
+        self_copy = copy.copy(self)
         self_copy.gradients = grads
         return self_copy
 
@@ -39,7 +36,7 @@ class GradientCarrier:
 
         returns: an instance of this particular GradientCarrier with the gradient set
         """
-        self_copy = copy.deepcopy(self)
+        self_copy = copy.copy(self)
         assert self_copy.gradients == {}
 
         self_copy.gradients = update_grads(inputs, local_grads)
@@ -185,7 +182,7 @@ class Point(GradientCarrier):
         return Point(x2, y2).with_grads_from_previous(inputs, grads)
 
     def same_as(pt1: Point, pt2: Point, eps=1e-4) -> bool:
-        return (pt1.x - pt2.x) ** 2 + (pt1.y - pt2.y) ** 2 <= eps ** 2
+        return (pt1.x - pt2.x) ** 2 + (pt1.y - pt2.y) ** 2 <= eps * eps
 
     def mirror_across_line(pt: Point, line: Line) -> Point:
         # TODO: Validate gradient in tests
@@ -303,30 +300,33 @@ def update_grads(
             )
             continue
 
-        incoming_parameters.extend(list(input_obj.grads.keys()))
+        incoming_parameters.extend(input_obj.gradients.keys())
     incoming_parameters = list(set(incoming_parameters))
 
     # Parameters that previous operations don't know anything about
     # I.e. maybe we did translations on `l` before, and now a rotation
     # on new parameter `theta`
+    local_params = local_grads.keys()
+    input_params = inputs.keys()
     own_parameters = [
         param
-        for param in local_grads.keys()
-        if param not in inputs.keys() and param not in incoming_parameters
+        for param in local_params
+        if param not in input_params and param not in incoming_parameters
     ]
 
     out_grads = {}
+    inputs_items = inputs.items()
     for param in incoming_parameters + own_parameters:
         grads = []
 
         # If we have inputs that depended on parameters
-        for input_name, input_obj in inputs.items():
+        for input_name, input_obj in inputs_items:
             # TODO: Same as above
             if not isinstance(input_obj, GradientCarrier):
                 continue
             # If one of the inputs doesn't depend on the parameter, we simply
             # ignore it. No gradient information in there!
-            if param in input_obj.grads:
+            if param in input_obj.gradients:
                 dself_dinput = np.array(local_grads[input_name])
                 dinput_dparam = np.array(input_obj.grads[param])
 
@@ -463,7 +463,12 @@ class Line(GradientCarrier):
 
         return Point(x, y).with_grads_from_previous(inputs, local_grads)
 
-    def plot(self, ax=plt, lims=(-20, 20, 10), label=None):
+    def plot(self, ax=None, lims=(-20, 20, 10), label=None):
+        import matplotlib.pyplot as plt  # type: ignore
+
+        if ax is None:
+            ax = plt
+
         x = np.linspace(*lims)
         y = self.m * x + self.b
 
@@ -499,6 +504,9 @@ def parametric_pt(l=2.0, theta=np.radians(10)):
 
 
 def main():
+    from scipy import optimize  # type: ignore
+    import matplotlib.pyplot as plt  # type: ignore
+
     print("Go ####################\n\n")
 
     def f(x):
