@@ -361,9 +361,6 @@ class Polygon:
         return int(shared_points[0])
 
     def connect_to_poly(poly1: Polygon, poly2: Polygon):
-        poly1 = poly1.copy()
-        poly2 = poly2.copy()
-
         if not poly1.same_orientation_as(poly2):
             poly2 = poly2.flip_orientation()
 
