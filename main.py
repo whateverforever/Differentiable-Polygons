@@ -182,7 +182,9 @@ class Point(GradientCarrier):
         return Point(x2, y2).with_grads_from_previous(inputs, grads)
 
     def same_as(pt1: Point, pt2: Point, eps=1e-4) -> bool:
-        return (pt1.x - pt2.x) ** 2 + (pt1.y - pt2.y) ** 2 <= eps * eps
+        a = pt1.x - pt2.x
+        b = pt1.y - pt2.y
+        return a * a + b * b <= eps * eps
 
     def mirror_across_line(pt: Point, line: Line) -> Point:
         # TODO: Validate gradient in tests
