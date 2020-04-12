@@ -308,7 +308,7 @@ def update_grads(
     # Parameters that previous operations don't know anything about
     # I.e. maybe we did translations on `l` before, and now a rotation
     # on new parameter `theta`
-    local_params = local_grads.keys()
+    local_params = list(local_grads.keys())
     input_params = inputs.keys()
     own_parameters = [
         param
