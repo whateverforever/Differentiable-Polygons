@@ -318,8 +318,9 @@ def update_grads(
 
     out_grads = {}
     inputs_items = inputs.items()
+    shapeA = len(local_grads[local_params[0]])
     for param in incoming_parameters + own_parameters:
-        grads = []
+        grads = np.zeros((shapeA, 1))
 
         # If we have inputs that depended on parameters
         for input_name, input_obj in inputs_items:
