@@ -330,12 +330,12 @@ def update_grads(
             # If one of the inputs doesn't depend on the parameter, we simply
             # ignore it. No gradient information in there!
             if param in input_obj.gradients:
-                dself_dinput = np.array(local_grads[input_name])
-                dinput_dparam = np.array(input_obj.grads[param])
+                dself_dinput = local_grads[input_name]
+                dinput_dparam = input_obj.gradients[param]
 
-                grads.append(dself_dinput @ dinput_dparam)
+                grads += np.matmul(dself_dinput, dinput_dparam)
 
-        out_grads[param] = np.sum(grads, axis=0)
+        out_grads[param] = grads
     return out_grads
 
 
