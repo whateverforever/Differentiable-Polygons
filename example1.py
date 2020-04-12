@@ -317,12 +317,9 @@ class Polygon:
         edge_sum = 0
         points = poly.points
 
-        for i, pt in enumerate(points):
-            if i == 0:
-                continue
-
-            pt1 = points[i - 1]
-            pt2 = points[i]
+        for i, pt in enumerate(points[1:]):
+            pt1 = points[i]
+            pt2 = points[i + 1]
 
             edge = (pt2.x - pt1.x) * (pt2.y + pt1.y)
             edge_sum += edge
@@ -339,10 +336,7 @@ class Polygon:
         return orient1 == orient2
 
     def flip_orientation(poly: Polygon) -> Polygon:
-        new_poly = poly.copy()
-        new_poly._points = list(reversed(poly._points))
-
-        return new_poly
+        return Polygon(poly._points[::-1])
 
     def num_verts_shared_with(poly1: Polygon, poly2: Polygon) -> int:
         if not poly1.bounding_box_intersects(poly2):
