@@ -197,7 +197,7 @@ class Point(GradientCarrier):
 
         du_dpt = [[-1 + 2 / (1 + m ** 2), (2 * m) / (1 + m ** 2)]]
         dv_dpt = [[(2 * m) / (1 + m ** 2), 1 - 2 / (1 + m ** 2)]]
-        dself_dpt = np.vstack([du_dpt, dv_dpt])
+        dself_dpt = [*du_dpt, *dv_dpt]
 
         du_dline = [
             [
@@ -211,7 +211,7 @@ class Point(GradientCarrier):
                 2 / (1 + m ** 2),
             ]
         ]
-        dself_dline = np.vstack([du_dline, dv_dline])
+        dself_dline = [*du_dline, *dv_dline]
         inputs = {"pt": pt, "line": line}
         grads = {"pt": dself_dpt, "line": dself_dline}
 
