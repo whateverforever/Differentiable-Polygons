@@ -14,5 +14,5 @@ jobs:
           pip install numpy matplotlib scipy 
       - name: Test with pytest
         run: |
-          pip install pytest hypothesis
+          pip install pytest hypothesis pytest-benchmark
           pytest -rA
