@@ -406,34 +406,35 @@ class Line(GradientCarrier):
 
         return new_line
 
-    def rotate_ccw(self, theta: Scalar, pivot: Point = None) -> Line:
+    def rotate_ccw(line1: Line, angle_rad: Scalar, pivot: Point = None) -> Line:
         if pivot is None:
             pivot = Point(0, 0)
 
-        if not isinstance(theta, Scalar):
-            theta = Scalar(theta)
+        if not isinstance(angle_rad, Scalar):
+            angle_rad = Scalar(angle_rad)
 
-        line_centered = self.translate(-pivot)
+        line_centered = line1.translate(-pivot)
 
         m = line_centered.m
         b = line_centered.b
 
-        m2 = np.tan(np.arctan(m) + theta.value)
+        m2 = np.tan(np.arctan(m) + angle_rad.value)
         b2 = b
 
         sec = lambda x: 1 / np.cos(x)
+        d_dangle = np.radians(sec(angle_rad.value + np.arctan(m)) ** 2)
 
         local_grads = {}
-        local_grads["theta"] = [
-            [sec(theta.value + np.arctan(m)) ** 2],
+        local_grads["angle_rad"] = [
+            [d_dangle],
             [0],
         ]
         local_grads["line_centered"] = [
-            [sec(theta.value + np.arctan(m) ** 2) / (1 + m ** 2), 0],
+            [d_dangle / (1 + m ** 2), 0],
             [0, 1],
         ]
 
-        inputs = {"theta": theta, "line_centered": line_centered}
+        inputs = {"angle_rad": angle_rad, "line_centered": line_centered}
 
         rotated_line = Line(m2, b2).with_grads_from_previous(inputs, local_grads)
 
