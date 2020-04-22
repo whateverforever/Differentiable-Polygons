@@ -356,42 +356,32 @@ def test_line_from_points():
     # TODO: Check grad values
 
 
-def test_line_rotation():
+@given(reals2(min_value=-720, max_value=720), reals)
+def test_line_rotation(real_angle, real_b):
+    real_angle = np.around(real_angle, decimals=4)
+
     from scipy.optimize import check_grad  # type:ignore
 
-    line = Line(0, 0)
-    theta = Scalar.Param("theta", np.radians(45))
+    def f(angle):
+        theta_val = float(angle)
 
-    line2 = line.rotate_ccw(theta)
-
-    assert np.isclose(line2.m, 1)
-    assert "theta" in line2.grads
-    assert line2.grads["theta"][0] > 0
-
-    line3 = line.rotate_ccw(-theta)
-    assert line3.grads["theta"][0] < 0
-
-    # TODO: Add test for magnitude of grads
-
-    def f_m(x):
-        theta_val = float(x)
-
-        line = Line(0, 0)
+        line = Line(0, real_b)
         theta = Scalar.Param("theta", np.radians(theta_val))
         line2 = line.rotate_ccw(theta)
 
-        return line2.m
+        return line2
 
-    def grads_m(x):
-        theta_val = float(x)
+    assert np.isclose(f(real_angle).m, np.tan(np.radians(real_angle)))
+    assert f(real_angle).b == real_b
 
-        line = Line(0, 0)
-        theta = Scalar.Param("theta", np.radians(theta_val))
-        line2 = line.rotate_ccw(theta)
-
-        return line2.grads["theta"][0][0]
-
-    assert check_grad(f_m, grads_m, np.array([33.456])) < 1e-4
+    assert (
+        check_grad(
+            lambda x: f(x).m,
+            lambda x: float(f(x).grads["theta"][0]),
+            np.array([real_angle]),
+        )
+        < 1e-4
+    )
 
 
 # TODO: With new parameterized line: Take 0 into account and negative vals
