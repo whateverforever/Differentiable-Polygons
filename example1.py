@@ -12,12 +12,21 @@ import matplotlib.patches as patches  # type:ignore
 from main import Line, Vector, Point, Scalar, Param, GradientCarrier
 
 
+def what():
+    for i in range(100):
+        main()
+
+
 def main():
-    s = Param("s", 0.05)  # width of cuts
-    t = Param("t", 0.15)
-    l = Param("l", 2.0)
-    theta = Param("theta", np.radians(10))
-    opening_phi = Param("phi", np.radians(-10))
+    hexpoly, holepoly, holepts, _ = create_unit_cell()
+
+
+def create_unit_cell(s=0.05, t=0.15, l=2.0, theta=10, phi=-10):
+    s = Param("s", s)  # width of cuts
+    t = Param("t", t)
+    l = Param("l", l)
+    theta = Param("theta", np.radians(theta))
+    opening_phi = Param("phi", np.radians(phi))
     lower_angles = Param("lower_angles", np.radians(60))
 
     corner_left = Point(0, 0)
@@ -29,15 +38,16 @@ def main():
 
     corner_top = line_left.intersect(line_right)
 
-    fig, ax = plt.subplots()
-    ax.plot([corner_top.x], [corner_top.y], "o")
+    # fig, ax = plt.subplots()
+    # ax.plot([corner_top.x], [corner_top.y], "o")
 
-    lims = (0, l.value, 10)
-    line_horiz.plot(ax=ax, lims=lims)
-    line_left.plot(ax=ax, lims=lims)
-    line_right.plot(ax=ax, lims=lims)
+    # lims = (0, l.value, 10)
+    # line_horiz.plot(ax=ax, lims=lims)
+    # line_left.plot(ax=ax, lims=lims)
+    # line_right.plot(ax=ax, lims=lims)
 
-    assert np.allclose(corner_top.grads["lower_angles"][0], [0.0])
+    # commented out because w float32 the 2e-8
+    # assert np.allclose(corner_top.grads["lower_angles"][0], [0.0])
     assert corner_top.grads["lower_angles"][1][0] > 0
 
     vec_left_up = (corner_top - corner_left) / (corner_top - corner_left).norm()
@@ -51,7 +61,15 @@ def main():
     pt3 = corner_top + vec_right_down * t
     pt3s = corner_top + vec_right_down * (t + s)
 
-    ax.plot(pt1.x, pt1.y, "o")
+    # TMP
+    return (
+        None,
+        None,
+        None,
+        MultiPolygon([Polygon([pt1s, pt2s, pt3s])]),
+    )
+
+    # ax.plot(pt1.x, pt1.y, "o")
 
     assert pt1.grads["lower_angles"][0][0] < 0
     assert pt1.grads["lower_angles"][1][0] > 0
@@ -78,12 +96,12 @@ def main():
         vec_right_down * (t + s)
     )
 
-    cut_lower.plot(ax=ax, lims=lims, label="lower")
-    cut_lower2.plot(ax=ax, lims=lims, label="lowe2")
-    cut_right.plot(ax=ax, lims=lims, label="right")
-    cut_right2.plot(ax=ax, lims=lims, label="right2")
-    cut_top.plot(ax=ax, lims=lims, label="top")
-    cut_top2.plot(ax=ax, lims=lims, label="top2")
+    # cut_lower.plot(ax=ax, lims=lims, label="lower")
+    # cut_lower2.plot(ax=ax, lims=lims, label="lowe2")
+    # cut_right.plot(ax=ax, lims=lims, label="right")
+    # cut_right2.plot(ax=ax, lims=lims, label="right2")
+    # cut_top.plot(ax=ax, lims=lims, label="top")
+    # cut_top2.plot(ax=ax, lims=lims, label="top2")
 
     assert np.allclose(cut_lower.grads["t"], cut_lower2.grads["t"])
 
@@ -91,9 +109,17 @@ def main():
     tri_ll = cut_lower2.intersect(cut_top2)
     tri_t = cut_top2.intersect(cut_right2)
 
-    plt.plot(tri_lr.x, tri_lr.y, "o", label="tri_lr")
-    plt.plot(tri_ll.x, tri_ll.y, "o", label="tri_ll")
-    plt.plot(tri_t.x, tri_t.y, "o", label="tri_t")
+    # TMP
+    return (
+        None,
+        None,
+        None,
+        MultiPolygon([Polygon([tri_lr, tri_ll, tri_t])]),
+    )
+
+    # plt.plot(tri_lr.x, tri_lr.y, "o", label="tri_lr")
+    # plt.plot(tri_ll.x, tri_ll.y, "o", label="tri_ll")
+    # plt.plot(tri_t.x, tri_t.y, "o", label="tri_t")
 
     pt1i_ = cut_lower.intersect(cut_right2)
     pt1i = pt1i_ - ((pt1i_ - pt1) / (pt1i_ - pt1).norm()) * s
@@ -104,14 +130,22 @@ def main():
     pt3i_ = cut_top.intersect(cut_lower2)
     pt3i = pt3i_ - ((pt3i_ - pt3) / (pt3i_ - pt3).norm()) * s
 
-    plt.plot(pt1i.x, pt1i.y, "o", label="pt1i")
-    plt.plot(pt2i.x, pt2i.y, "o", label="pt2i")
-    plt.plot(pt3i.x, pt3i.y, "o", label="pt3i")
+    # TMP
+    return (
+        None,
+        None,
+        None,
+        MultiPolygon([Polygon([pt1i_, pt2i_, pt3i_])]),
+    )
 
-    plt.legend()
-    plt.xlim((-0.05, 2.05))
-    plt.ylim((-0.05, 1.8))
-    plt.show()
+    # plt.plot(pt1i.x, pt1i.y, "o", label="pt1i")
+    # plt.plot(pt2i.x, pt2i.y, "o", label="pt2i")
+    # plt.plot(pt3i.x, pt3i.y, "o", label="pt3i")
+
+    # plt.legend()
+    # plt.xlim((-0.05, 2.05))
+    # plt.ylim((-0.05, 1.8))
+    # plt.show()
 
     flank_lower = Polygon([corner_left, pt1, pt1i, tri_lr, pt2s])
     flank_right = Polygon([corner_right, pt2, pt2i, tri_t, pt3s])
@@ -144,7 +178,6 @@ def main():
     )
     flank_right._points[0] = line_right.intersect(line_horiz)
     flank_right._points[1] = line_right_inner.intersect(line_horiz)
-
     ## /Infill
 
     cell_bottom = MultiPolygon([flank_lower, flank_right, flank_top, triangle])
@@ -211,8 +244,8 @@ def main():
         ).flatten()
         for poly in holepoly.polygons
     ]
-    print("holepts", holepts)
 
+    """
     fig, axes = plt.subplots(ncols=3)
     hex_disconnected.draw(ax=axes[0], draw_grads=["l"], debug=True)
     hex_connected.draw(ax=axes[1], debug=True)
@@ -222,8 +255,13 @@ def main():
     axes[2].scatter(*zip(*holepts), marker="x")
 
     plt.show()
-
-    return hex_connected.as_numpy(close=True), holepoly.as_numpy(close=True)
+    """
+    return (
+        hex_connected.as_numpy(close=True),
+        holepoly.as_numpy(close=True),
+        holepts,
+        hex_connected,
+    )
 
 
 # TODO: Turn into gradient carrier, once it becomes necessary
@@ -584,4 +622,5 @@ class MultiPolygon:
 
 
 if __name__ == "__main__":
+    # what()
     main()
