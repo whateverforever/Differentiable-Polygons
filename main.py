@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 import typing as ty
 import warnings
-
 import numpy as np  # type: ignore
 
 from numbers import Number
@@ -184,6 +183,7 @@ class Point(GradientCarrier):
     def same_as(pt1: Point, pt2: Point, eps=1e-4) -> bool:
         a = pt1.x - pt2.x
         b = pt1.y - pt2.y
+
         return a * a + b * b <= eps * eps
 
     def mirror_across_line(pt: Point, line: Line) -> Point:
@@ -296,8 +296,8 @@ def update_grads(
         if not isinstance(input_obj, GradientCarrier):
             warnings.warn(
                 "Got non-GradientCarrier obj of type {} as input. Won't have gradient"
-                " information, so please remove or replace by Scalar or Vector".format(
-                    type(input_obj)
+                " information, so please remove or replace by Scalar or Vector: {}".format(
+                    type(input_obj), input_obj
                 )
             )
             continue
