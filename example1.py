@@ -61,14 +61,6 @@ def create_unit_cell(s=0.05, t=0.15, l=2.0, theta=10, phi=-10):
     pt3 = corner_top + vec_right_down * t
     pt3s = corner_top + vec_right_down * (t + s)
 
-    # TMP
-    return (
-        None,
-        None,
-        None,
-        MultiPolygon([Polygon([pt1s, pt2s, pt3s])]),
-    )
-
     # ax.plot(pt1.x, pt1.y, "o")
 
     assert pt1.grads["lower_angles"][0][0] < 0
@@ -109,14 +101,6 @@ def create_unit_cell(s=0.05, t=0.15, l=2.0, theta=10, phi=-10):
     tri_ll = cut_lower2.intersect(cut_top2)
     tri_t = cut_top2.intersect(cut_right2)
 
-    # TMP
-    return (
-        None,
-        None,
-        None,
-        MultiPolygon([Polygon([tri_lr, tri_ll, tri_t])]),
-    )
-
     # plt.plot(tri_lr.x, tri_lr.y, "o", label="tri_lr")
     # plt.plot(tri_ll.x, tri_ll.y, "o", label="tri_ll")
     # plt.plot(tri_t.x, tri_t.y, "o", label="tri_t")
@@ -129,14 +113,6 @@ def create_unit_cell(s=0.05, t=0.15, l=2.0, theta=10, phi=-10):
 
     pt3i_ = cut_top.intersect(cut_lower2)
     pt3i = pt3i_ - ((pt3i_ - pt3) / (pt3i_ - pt3).norm()) * s
-
-    # TMP
-    return (
-        None,
-        None,
-        None,
-        MultiPolygon([Polygon([pt1i_, pt2i_, pt3i_])]),
-    )
 
     # plt.plot(pt1i.x, pt1i.y, "o", label="pt1i")
     # plt.plot(pt2i.x, pt2i.y, "o", label="pt2i")
