@@ -356,7 +356,9 @@ def test_line_from_points():
     # TODO: Check grad values
 
 
-@given(reals2(min_value=-720, max_value=720), reals)
+@given(
+    reals2(min_value=-720, max_value=720), reals2(min_value=-1000, max_value=1000),
+)
 def test_line_rotation(real_angle, real_b):
     real_angle = np.around(real_angle, decimals=4)
 
@@ -386,46 +388,34 @@ def test_line_rotation(real_angle, real_b):
 
 # TODO: With new parameterized line: Take 0 into account and negative vals
 @given(reals2(min_value=0.1, max_value=100))
-def test_translation(l_val):
-    l = Scalar.Param("l", l_val)
+def test_line_translation(l_val):
+    def f(l_val):
+        l = Scalar.Param("l", float(l_val))
 
-    pt = Point(1, 1)
-    pt2 = pt.translate(Point(l, 0))
+        pt = Point(1, 1)
+        pt2 = pt.translate(Point(l, 0))
 
-    line = Line.make_from_points(pt2, pt)
-    line2 = line.translate(Vector(l, l))
+        line = Line.make_from_points(pt2, pt)
+        line2 = line.translate(Vector(l, l))
+        return line2
 
-    assert line2.b == l.value + 1
+    line2 = f(l_val)
+
+    assert line2.b == l_val + 1
     assert line2.m == 0
 
-    assert "l" in line2.grads
-    # TODO: Check grad values
-
-    def f(x):
-        l = float(x)
-
-        l = Scalar.Param("l", l)
-        pt = Point(1, 1)
-        pt2 = pt.translate(Point(l, 0))
-
-        line = Line.make_from_points(pt2, pt)
-        line2 = line.translate(Vector(l, l))
-
-        return line2.b
-
-    def grads(x):
-        l = float(x)
-
-        l = Scalar.Param("l", l)
-        pt = Point(1, 1)
-        pt2 = pt.translate(Point(l, 0))
-
-        line = Line.make_from_points(pt2, pt)
-        line2 = line.translate(Vector(l, l))
-
-        return line2.grads["l"][1][0]
-
-    assert check_grad(f, grads, np.array([l_val])) < 1e-4
+    assert (
+        check_grad(
+            lambda x: f(x).m, lambda x: float(f(x).grads["l"][0]), np.array([l_val]),
+        )
+        < 1e-3
+    )
+    assert (
+        check_grad(
+            lambda x: f(x).b, lambda x: float(f(x).grads["l"][1]), np.array([l_val]),
+        )
+        < 1e-3
+    )
 
 
 def test_from_const():
@@ -474,14 +464,36 @@ def test_intersection():
     assert np.allclose(intersect.as_numpy(), intersect_2.as_numpy())
     assert np.allclose(intersect.grads["h"], intersect_2.grads["h"])
 
-    # Imagine a line like a clock dial
-    m = Param("m", 1.23)
-    b = 0.0
-    line_dial = Line(m, b)
 
-    # As we wiggle its slope, the x-coordinate shifts, while the
-    # y-coordinate stays untouched
-    intersect2 = line_dial.intersect(line_horiz)
+@given(
+    reals2(min_value=-1000, max_value=1000),
+    reals2(min_value=-1000, max_value=1000),
+    reals2(min_value=-1000, max_value=1000),
+    reals2(min_value=-1000, max_value=1000),
+)
+def test_intersection_grad(m1, m2, b1, b2):
+    if np.isclose(m1, m2, atol=1):
+        return
 
-    assert np.allclose(intersect2.grads["m"][0], [(b - h.value) / (m.value ** 2)])
-    assert np.allclose(intersect2.grads["m"][1], [0.0])
+    def f(m1) -> Point:
+        # Imagine a line like a clock dial
+        m1 = Param("m1", float(m1))
+
+        line_a = Line(m1, b1)
+        line_b = Line(m2, b2)
+
+        # As we wiggle its slope, the x-coordinate shifts, while the
+        # y-coordinate stays untouched
+        intersect2 = line_a.intersect(line_b)
+        return intersect2
+
+    # m = 1.23
+    # intersect2 = f(m1)
+
+    x_fun = lambda m: f(m).x
+    y_fun = lambda m: f(m).y
+    x_grad = lambda m: float(f(m).grads["m1"][0])
+    y_grad = lambda m: float(f(m).grads["m1"][1])
+
+    assert check_grad(y_fun, y_grad, np.array([m1])) < 1e-3
+    assert check_grad(x_fun, x_grad, np.array([m1])) < 1e-3
