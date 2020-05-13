@@ -280,28 +280,50 @@ class MartinezPointWithGrad(MPoint):
 
         return pt
 
+
 # TODO: Turn into gradient carrier, once it becomes necessary
 class Polygon:
-    def __init__(self, points: List[Point] = None):
+    def __init__(self, points: List[Point] = None, holes: List[List[Point]] = None):
         super().__init__()
 
         if points is None:
             points = []
 
+        if holes is None:
+            holes = []
+
         self._points: List[Point] = points
+        self._holes: List[List[Point]] = holes
         self._bounding_box: Union[Dict[str, float], None] = None
 
     @property
     def points(poly: Polygon) -> List[Point]:
         return copy.copy(poly._points)
 
+    @property
+    def holes(poly: Polygon):
+        return copy.copy(poly._holes)
+
     def as_numpy(poly: Polygon, close=False) -> np.ndarray:
         points = poly.points
+        holes = poly.holes
+        holes_out = []
+
         if close:
             if not points[-1].same_as(points[0]):
                 points.append(points[0])
 
-        return np.array([point.as_numpy().flatten() for point in points])
+            for hole in holes:
+                if not hole[-1].same_as(hole[0]):
+                    hole.append(hole[0])
+
+        for hole in holes:
+            holes_out.append([point.as_numpy().flatten() for point in hole])
+
+        return (
+            np.array([point.as_numpy().flatten() for point in points]),
+            np.array(holes_out),
+        )
 
     @property
     def bounding_box(self) -> Dict[str, float]:
@@ -361,7 +383,10 @@ class Polygon:
         points = poly.points
         points_new = [point.translate(vec) for point in points]
 
-        return Polygon(points_new)
+        holes = poly._holes
+        holes_new = [[point.translate(vec) for point in hole] for hole in holes]
+
+        return Polygon(points_new, holes_new)
 
     def rotate(poly: Polygon, origin: Point, angle: Scalar) -> Polygon:
         points = poly.points
@@ -486,6 +511,19 @@ class MultiPolygon:
         debug=False,
         draw_grads: List[str] = None,
     ):
+        def get_poly_path(points2D):
+            if not np.allclose(points2D[-1], points2D[0]):
+                points2D.append(points2D[0])
+
+            codes = []
+            codes.append(Path.MOVETO)
+            for i in range(len(points2D) - 2):
+                codes.append(Path.LINETO)
+            codes.append(Path.CLOSEPOLY)
+
+            path = Path(points2D, codes)
+            return path
+
         fig = None
         if ax is None:
             fig, ax = plt.subplots()
@@ -493,7 +531,6 @@ class MultiPolygon:
         polygons = mpoly._polygons
 
         for ipoly, poly in enumerate(polygons):
-            n = len(poly._points)
             points2D = [(point.x, point.y) for point in poly._points]
 
             facecolor = "orange"
@@ -515,19 +552,16 @@ class MultiPolygon:
                     {"color": textcolor}
                 )
 
-            if not np.allclose(points2D[-1], points2D[0]):
-                points2D.append(points2D[0])
-                n += 1
+            path_poly = get_poly_path(points2D)
+            patch_poly = patches.PathPatch(path_poly, facecolor=facecolor, lw=0.25)
+            ax.add_patch(patch_poly)
 
-            codes = []
-            codes.append(Path.MOVETO)
-            for i in range(n - 2):
-                codes.append(Path.LINETO)
-            codes.append(Path.CLOSEPOLY)
+            for holepts in poly._holes:
+                points2D = [(point.x, point.y) for point in holepts]
 
-            path = Path(points2D, codes)
-            patch = patches.PathPatch(path, facecolor=facecolor, lw=0.25)
-            ax.add_patch(patch)
+                path_hole = get_poly_path(points2D)
+                patch_hole = patches.PathPatch(path_hole, facecolor="white", lw=0.25)
+                ax.add_patch(patch_hole)
 
         if draw_grads is not None:
             for poly in polygons:
@@ -574,6 +608,13 @@ class MultiPolygon:
     def mirror_across_line(mpoly: MultiPolygon, line: Line) -> MultiPolygon:
         polygons = mpoly.polygons
         polygons_new = [poly.mirror_across_line(line) for poly in polygons]
+
+        return MultiPolygon(polygons_new)
+
+    # TODO: Add to original repo
+    def translate(mpoly: MultiPolygon, vec: Vector) -> MultiPolygon:
+        polygons = mpoly.polygons
+        polygons_new = [poly.translate(vec) for poly in polygons]
 
         return MultiPolygon(polygons_new)
 
