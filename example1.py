@@ -117,18 +117,29 @@ def create_unit_cell(s=0.05, t=0.15, l=2.0, theta=10, phi=-10):
     tri_ll = cut_lower2.intersect(cut_top2)
     tri_t = cut_top2.intersect(cut_right2)
 
+    # <--
+    vec_tri_bl = (tri_ll - tri_lr) / (tri_ll - tri_lr).norm()
+    # /^
+    vec_tri_lu = (tri_t - tri_ll) / (tri_t - tri_ll).norm()
+    # \v
+    vec_tri_rd = (tri_lr - tri_t) / (tri_lr - tri_t).norm()
+
+    tri_lri = tri_lr + vec_tri_bl * c
+    tri_lli = tri_ll + vec_tri_lu * c
+    tri_ti = tri_t + vec_tri_rd * c
+
     # plt.plot(tri_lr.x, tri_lr.y, "o", label="tri_lr")
     # plt.plot(tri_ll.x, tri_ll.y, "o", label="tri_ll")
     # plt.plot(tri_t.x, tri_t.y, "o", label="tri_t")
 
     pt1i_ = cut_lower.intersect(cut_right2)
-    pt1i = pt1i_ - ((pt1i_ - pt1) / (pt1i_ - pt1).norm()) * s
+    pt1i = pt1i_ - ((pt1i_ - pt1) / (pt1i_ - pt1).norm()) * c
 
     pt2i_ = cut_right.intersect(cut_top2)
-    pt2i = pt2i_ - ((pt2i_ - pt2) / (pt2i_ - pt2).norm()) * s
+    pt2i = pt2i_ - ((pt2i_ - pt2) / (pt2i_ - pt2).norm()) * c
 
     pt3i_ = cut_top.intersect(cut_lower2)
-    pt3i = pt3i_ - ((pt3i_ - pt3) / (pt3i_ - pt3).norm()) * s
+    pt3i = pt3i_ - ((pt3i_ - pt3) / (pt3i_ - pt3).norm()) * c
 
     # plt.plot(pt1i.x, pt1i.y, "o", label="pt1i")
     # plt.plot(pt2i.x, pt2i.y, "o", label="pt2i")
@@ -139,10 +150,10 @@ def create_unit_cell(s=0.05, t=0.15, l=2.0, theta=10, phi=-10):
     # plt.ylim((-0.05, 1.8))
     # plt.show()
 
-    flank_lower = Polygon([corner_left, pt1, pt1i, tri_lr, pt2s])
-    flank_right = Polygon([corner_right, pt2, pt2i, tri_t, pt3s])
-    flank_top = Polygon([corner_top, pt3, pt3i, tri_ll, pt1s])
-    triangle_pre = Polygon([tri_ll, tri_lr, tri_t])
+    flank_lower = Polygon([corner_left, pt1, pt1i, tri_lri, tri_lr, pt2s])
+    flank_right = Polygon([corner_right, pt2, pt2i, tri_ti, tri_t, pt3s])
+    flank_top = Polygon([corner_top, pt3, pt3i, tri_lli, tri_ll, pt1s])
+    triangle_pre = Polygon([tri_lli, tri_ll, tri_lri, tri_lr, tri_ti, tri_t])
     triangle = triangle_pre.rotate(Point(0, 0), opening_phi)
 
     flank_lower = flank_lower.translate(triangle.points[1] - triangle_pre.points[1])
@@ -172,7 +183,9 @@ def create_unit_cell(s=0.05, t=0.15, l=2.0, theta=10, phi=-10):
     flank_right._points[1] = line_right_inner.intersect(line_horiz)
     ## /Infill
 
-    cell_bottom = MultiPolygon([flank_lower, flank_right, flank_top, triangle])
+    cell_bottom = MultiPolygon(
+        [flank_lower, flank_right, flank_top, triangle]
+    ).join_polygons()
     cell_left = cell_bottom.mirror_across_line(line_left)
     cell_right = cell_bottom.mirror_across_line(line_right)
     lower_half = MultiPolygon.FromMultipolygons([cell_bottom, cell_left, cell_right])
