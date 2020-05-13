@@ -281,16 +281,18 @@ class Polygon:
     def copy(self):
         return Polygon(copy.copy(self._points))
 
-    def bounding_box_intersects(poly1: Polygon, poly2: Polygon) -> bool:
+    def bounding_box_intersects(poly1: Polygon, poly2: Polygon, grow=0.00) -> bool:
         bb1 = poly1.bounding_box
         bb2 = poly2.bounding_box
 
+        scale_fac = grow + 1
+
         if (
             False
-            or bb1["minx"] > bb2["maxx"]
-            or bb1["miny"] > bb2["maxy"]
-            or bb1["maxx"] < bb2["minx"]
-            or bb1["maxy"] < bb2["miny"]
+            or bb1["minx"] > bb2["maxx"] * scale_fac
+            or bb1["miny"] > bb2["maxy"] * scale_fac
+            or bb1["maxx"] * scale_fac < bb2["minx"]
+            or bb1["maxy"] * scale_fac < bb2["miny"]
         ):
             return False
 
