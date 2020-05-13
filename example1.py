@@ -364,6 +364,25 @@ class Polygon:
         mpoly = MultiPolygon([self])
         mpoly.draw(**kwargs)
 
+    # TODO: Fix this class to respect hole points everywhere!
+    def snap_to_poly(poly_slave: Polygon, poly_master: Polygon) -> Polygon:
+        """
+        For neighbouring polygons: Sets "approximately same" points to "exactly same"
+        Needed for union to work properly
+        """
+
+        patched_slave_pts = []
+
+        for ipt, pt in enumerate(poly_slave.points):
+            close = poly_master.has_vertex(pt)
+
+            if close is not False:
+                patched_slave_pts.append(poly_master.points[close])
+            else:
+                patched_slave_pts.append(poly_slave.points[ipt])
+
+        return Polygon(patched_slave_pts, poly_slave._holes)
+
     def add_point(poly: Polygon, point: Point) -> Polygon:
         if not isinstance(point, Point):
             raise TypeError("Can't append anything else than a 'Point' to 'Polygon'")
