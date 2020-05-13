@@ -340,6 +340,12 @@ def test_rotation_parametric_pt(l, angle):
     )
 
 
+@given(reals, reals, reals, reals, reals, reals2(min_value=-720, max_value=720))
+def test_point_rotation_grad(x1, y1, x2, y2, l, angle):
+    pass
+    # TODO
+
+
 def test_line_from_points():
     l = Scalar.Param("l", 2.0)
     theta = Scalar.Param("theta", np.radians(60))
@@ -356,13 +362,10 @@ def test_line_from_points():
     # TODO: Check grad values
 
 
-@given(
-    reals2(min_value=-720, max_value=720), reals2(min_value=-1000, max_value=1000),
-)
+# TODO: Replace this shitty line parameterization with singularities everywhere
+@given(reals2(min_value=-88, max_value=88), reals)
 def test_line_rotation(real_angle, real_b):
     real_angle = np.around(real_angle, decimals=4)
-
-    from scipy.optimize import check_grad  # type:ignore
 
     def f(angle):
         theta_val = float(angle)
@@ -376,10 +379,20 @@ def test_line_rotation(real_angle, real_b):
     assert np.isclose(f(real_angle).m, np.tan(np.radians(real_angle)))
     assert f(real_angle).b == real_b
 
+    # TODO: Something's fucky here. Hypothesis always finds new examples that
+    # have greater errors. Maybe too many np.radian conversions?
     assert (
         check_grad(
             lambda x: f(x).m,
             lambda x: float(f(x).grads["theta"][0]),
+            np.array([real_angle]),
+        )
+        < 1e-4
+    )
+    assert (
+        check_grad(
+            lambda x: f(x).b,
+            lambda x: float(f(x).grads["theta"][1]),
             np.array([real_angle]),
         )
         < 1e-4
@@ -404,18 +417,14 @@ def test_line_translation(l_val):
     assert line2.b == l_val + 1
     assert line2.m == 0
 
-    assert (
-        check_grad(
-            lambda x: f(x).m, lambda x: float(f(x).grads["l"][0]), np.array([l_val]),
-        )
-        < 1e-3
-    )
-    assert (
-        check_grad(
-            lambda x: f(x).b, lambda x: float(f(x).grads["l"][1]), np.array([l_val]),
-        )
-        < 1e-3
-    )
+    fun_m = lambda x: f(x).m
+    fun_b = lambda x: f(x).b
+
+    grad_m = lambda x: float(f(x).grads["l"][0])
+    grad_b = lambda x: float(f(x).grads["l"][1])
+
+    assert check_grad(fun_m, grad_m, np.array([l_val]),) < 1e-3
+    assert check_grad(fun_b, grad_b, np.array([l_val]),) < 1e-3
 
 
 def test_from_const():
@@ -495,5 +504,5 @@ def test_intersection_grad(m1, m2, b1, b2):
     x_grad = lambda m: float(f(m).grads["m1"][0])
     y_grad = lambda m: float(f(m).grads["m1"][1])
 
-    assert check_grad(y_fun, y_grad, np.array([m1])) < 1e-3
     assert check_grad(x_fun, x_grad, np.array([m1])) < 1e-3
+    assert check_grad(y_fun, y_grad, np.array([m1])) < 1e-3
