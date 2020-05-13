@@ -37,7 +37,11 @@ def main():
     hexpoly, holepoly, holepts, _ = create_unit_cell()
 
 
-def create_unit_cell(s=0.05, t=0.15, l=2.0, theta=10, phi=-10):
+def create_unit_cell(s=0.05, t=0.15, l=2.0, angle_cut=10, angle_opening=-10, c=0.05):
+    theta = angle_cut
+    phi = angle_opening
+
+    c = Param("c", c)  # thickness of compliant hinge
     s = Param("s", s)  # width of cuts
     t = Param("t", t)
     l = Param("l", l)
