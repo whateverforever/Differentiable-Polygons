@@ -355,7 +355,7 @@ class Polygon:
         return Polygon(poly._points[::-1])
 
     def num_verts_shared_with(poly1: Polygon, poly2: Polygon) -> int:
-        if not poly1.bounding_box_intersects(poly2):
+        if not poly1.bounding_box_intersects(poly2, grow=0.05):
             return 0
 
         nshared = 0
