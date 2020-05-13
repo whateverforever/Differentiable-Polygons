@@ -37,7 +37,10 @@ def main():
     hexpoly, holepoly, holepts, _ = create_unit_cell()
 
 
-def create_unit_cell(s=0.05, t=0.15, l=2.0, angle_cut=10, angle_opening=-10, c=0.05):
+def create_unit_cell(
+    s=0.05, t=0.15, l=2.0, angle_cut=10, angle_opening=-10, c=0.05
+) -> Polygon:
+
     theta = angle_cut
     phi = angle_opening
 
@@ -200,77 +203,7 @@ def create_unit_cell(s=0.05, t=0.15, l=2.0, angle_cut=10, angle_opening=-10, c=0
     hex_disconnected = MultiPolygon.FromMultipolygons([lower_half, upper_half])
     hex_connected = hex_disconnected.join_polygons()
 
-    hole_inner_br = Polygon(
-        [
-            hex_connected.polygons[0].points[15],
-            hex_connected.polygons[0].points[16],
-            hex_connected.polygons[0].points[17],
-            hex_connected.polygons[0].points[0],
-            hex_connected.polygons[0].points[1],
-            hex_connected.polygons[2].points[2],
-            hex_connected.polygons[2].points[3],
-            hex_connected.polygons[2].points[4],
-        ]
-    )
-    inside_pt_br = np.mean(
-        [
-            hex_connected.polygons[2].points[3].as_numpy(),
-            hex_connected.polygons[0].points[17].as_numpy(),
-        ],
-        axis=0,
-    ).flatten()
-
-    hole_outer_bl = Polygon(
-        [
-            hex_connected.polygons[1].points[5],
-            hex_connected.polygons[1].points[6],
-            hex_connected.polygons[1].points[7],
-            hex_connected.polygons[1].points[0],
-            hex_connected.polygons[1].points[1],
-            hex_connected.polygons[0].points[1],
-            hex_connected.polygons[0].points[2],
-            hex_connected.polygons[0].points[3],
-        ]
-    )
-
-    # hex_connected.polygons[0].points[2]
-    # hex_connected.polygons[1].points[7]
-
-    holepoly = MultiPolygon(
-        [
-            hole_inner_br,
-            hole_inner_br.mirror_across_line(line_horiz_top),
-            hole_inner_br.mirror_across_line(line_left),
-            hole_outer_bl,
-            hole_outer_bl.mirror_across_line(line_horiz_top),
-            hole_outer_bl.mirror_across_line(line_right),
-        ]
-    )
-
-    holepts = [
-        np.mean(
-            [poly.points[2].as_numpy(), poly.points[6].as_numpy()], axis=0
-        ).flatten()
-        for poly in holepoly.polygons
-    ]
-
-    """
-    fig, axes = plt.subplots(ncols=3)
-    hex_disconnected.draw(ax=axes[0], draw_grads=["l"], debug=True)
-    hex_connected.draw(ax=axes[1], debug=True)
-    holepoly.draw(ax=axes[2])
-
-    axes[1].scatter(*zip(*holepts), marker="x")
-    axes[2].scatter(*zip(*holepts), marker="x")
-
-    plt.show()
-    """
-    return (
-        hex_connected.as_numpy(close=True),
-        holepoly.as_numpy(close=True),
-        holepts,
-        hex_connected,
-    )
+    return hex_connected.polygons[0]
 
 
 class MartinezPointWithGrad(MPoint):
