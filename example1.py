@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Any
 import warnings
 
 import numpy as np  # type:ignore
@@ -9,7 +9,23 @@ import matplotlib.pyplot as plt  # type:ignore
 from matplotlib.path import Path  # type:ignore
 import matplotlib.patches as patches  # type:ignore
 
-from main import Line, Vector, Point, Scalar, Param, GradientCarrier
+from .main import Line, Vector, Point, Scalar, Param, GradientCarrier
+
+# TODO: Opening fails, since triangle coords are not adapted
+
+try:
+    from martinez.polygon import Polygon as MPolygon  # type:ignore
+    from martinez.contour import Contour as MContour  # type:ignore
+    from martinez.point import Point as MPoint  # type:ignore
+    from martinez.boolean import (  # type:ignore
+        compute as Mcompute,
+        OperationType as MOperationType,
+    )
+except ImportError:
+    warnings.warn(
+        "!IMPORTANT! Couldn't find module 'martinez' needed for joining"
+        "polygons. Connecting polygons not possible"
+    )
 
 
 def what():
@@ -240,6 +256,17 @@ def create_unit_cell(s=0.05, t=0.15, l=2.0, theta=10, phi=-10):
     )
 
 
+class MartinezPointWithGrad(MPoint):
+    def __init__(self, pt_grad_carrier):
+        self.gradients = pt_grad_carrier.grads
+        super().__init__(pt_grad_carrier.x, pt_grad_carrier.y)
+
+    def to_differentiable(self):
+        pt = Point(self.x, self.y)
+        pt.gradients = self.gradients
+
+        return pt
+
 # TODO: Turn into gradient carrier, once it becomes necessary
 class Polygon:
     def __init__(self, points: List[Point] = None):
@@ -376,52 +403,42 @@ class Polygon:
 
         return int(shared_points[0])
 
-    def connect_to_poly(poly1: Polygon, poly2: Polygon):
-        if not poly1.same_orientation_as(poly2):
-            poly2 = poly2.flip_orientation()
+    def connect_to_poly(poly1: Polygon, poly2: Polygon) -> Polygon:
+        # if not poly1.same_orientation_as(poly2):
+        #    poly2 = poly2.flip_orientation()
 
-        in_polys = [poly1, poly2]
+        poly2 = poly2.snap_to_poly(poly1)
 
-        def vert_exists_in_other(poly_idx, vert_idx):
-            other_poly_idx = 1 if poly_idx == 0 else 0
+        ####
+        mpoints = [MartinezPointWithGrad(pt) for pt in poly1.points]
+        mholes = [
+            MContour([MartinezPointWithGrad(pt) for pt in hole], [], False)
+            for hole in poly1._holes
+        ]
+        mpoly1 = MPolygon([MContour(mpoints, [], True), *mholes])
 
-            other_poly = in_polys[other_poly_idx]
-            vert = in_polys[poly_idx].points[vert_idx]
+        mpoints = [MartinezPointWithGrad(pt) for pt in poly2.points]
+        mholes = [
+            MContour([MartinezPointWithGrad(pt) for pt in hole], [], False)
+            for hole in poly2._holes
+        ]
+        mpoly2 = MPolygon([MContour(mpoints, [], True), *mholes])
+        ####
 
-            return other_poly.has_vertex(vert)
+        unioned_poly = Mcompute(mpoly1, mpoly2, MOperationType.UNION)
 
-        start_vert = -1
+        exterior: List[Point] = None
+        interiors: List[List[Point]] = []
 
-        for i, _ in enumerate(poly1.points):
-            if vert_exists_in_other(0, i) is False:
-                start_vert = i
-                break
+        for ic, contour in enumerate(unioned_poly.contours):
+            pts = [pt.to_differentiable() for ipt, pt in enumerate(contour.points)]
 
-        curr_vert_idx: int = start_vert
-        curr_poly_idx: int = 0
-
-        out_poly: Polygon = Polygon([in_polys[curr_poly_idx].points[curr_vert_idx]])
-
-        while True:
-            if curr_vert_idx + 1 < len(in_polys[curr_poly_idx].points):
-                curr_vert_idx += 1
+            if contour.is_external:
+                exterior = pts
             else:
-                curr_vert_idx = 0
+                interiors.append(pts)
 
-            if (
-                out_poly.has_vertex(in_polys[curr_poly_idx].points[curr_vert_idx])
-                is not False
-            ):
-                return out_poly
-
-            out_poly = out_poly.add_point(in_polys[curr_poly_idx].points[curr_vert_idx])
-
-            idx_in_other = vert_exists_in_other(curr_poly_idx, curr_vert_idx)
-            if idx_in_other is False:
-                pass
-            else:
-                curr_poly_idx = 1 if curr_poly_idx == 0 else 0
-                curr_vert_idx = idx_in_other
+        return Polygon(exterior, interiors)
 
 
 # TODO: Turn into gradient carrier, once it becomes necessary
