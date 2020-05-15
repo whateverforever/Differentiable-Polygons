@@ -2,7 +2,7 @@ from hypothesis import given, reject
 from hypothesis.strategies import integers, text, floats
 
 import numpy as np  # type:ignore
-from scipy.optimize import check_grad  # type:ignore
+from scipy.optimize import check_grad, approx_fprime  # type:ignore
 from .primitives import (
     Scalar,
     Param,
@@ -157,14 +157,21 @@ def test_norm_optimization():
     assert res.success == True
 
 
-def test_mirror_axis():
-    pt = Point(3, 3)
-    line = Line(0, 2)
+@given(reals2(min_value=-1, max_value=1), reals2(min_value=-100, max_value=100))
+def test_mirror_axis(some_m, some_b):
+    def f(x):
+        m, b = x
 
-    pt_mirr = pt.mirror_across_line(line)
+        pt = Point(3, 3)
+        line = Line(Param("m", m), Param("b", b))
 
-    assert np.allclose(pt_mirr.as_numpy(), [[3], [1]])
-    # TODO: Gradient
+        pt_mirr = pt.mirror_across_line(line)
+
+        return pt_mirr
+
+    assert np.allclose(f([0, 2]).as_numpy(), [[3], [1]])
+
+    check_all_grads(f, [some_m, some_b])
 
 
 @given(reals, reals, reals, reals)
@@ -353,22 +360,7 @@ def test_line_rotation(real_angle, real_b):
 
     # TODO: Something's fucky here. Hypothesis always finds new examples that
     # have greater errors. Maybe too many np.radian conversions?
-    assert (
-        check_grad(
-            lambda x: f(x).m,
-            lambda x: float(f(x).grads["theta"][0]),
-            np.array([real_angle]),
-        )
-        < 1e-4
-    )
-    assert (
-        check_grad(
-            lambda x: f(x).b,
-            lambda x: float(f(x).grads["theta"][1]),
-            np.array([real_angle]),
-        )
-        < 1e-4
-    )
+    check_all_grads(f, real_angle)
 
 
 # TODO: With new parameterized line: Take 0 into account and negative vals
@@ -389,14 +381,47 @@ def test_line_translation(l_val):
     assert line2.b == l_val + 1
     assert line2.m == 0
 
-    fun_m = lambda x: f(x).m
-    fun_b = lambda x: f(x).b
+    check_all_grads(f, l_val)
 
-    grad_m = lambda x: float(f(x).grads["l"][0])
-    grad_b = lambda x: float(f(x).grads["l"][1])
 
-    assert check_grad(fun_m, grad_m, np.array([l_val]),) < 1e-3
-    assert check_grad(fun_b, grad_b, np.array([l_val]),) < 1e-3
+def check_all_grads(fun, x, tol=1e-5):
+    """
+    Takes a GradientCarrier object and checks all its gradients against the 
+    numerical equivalent
+    """
+
+    out_obj = fun(x)
+    gradients = list(out_obj.grads.keys())
+
+    if not isinstance(x, np.ndarray) and not isinstance(x, list):
+        xx = np.array([x])
+    else:
+        xx = np.array(x)
+
+    
+    for iout, output in enumerate(out_obj.properties):
+        for igrad, grad_name in enumerate(gradients):
+            def fun_m(x_scalar):
+                x_full = xx.copy()
+                x_full[igrad] = float(x_scalar[0])
+
+                return fun(x_full).properties[iout]
+
+            def grad_m(x_scalar):
+                x_full = xx.copy()
+                x_full[igrad] = float(x_scalar[0])
+
+                return float(fun(x_full).grads[grad_name][iout])
+
+            partial_x = np.array([xx[igrad]])
+
+            try:
+                assert check_grad(fun_m, grad_m, partial_x) < tol
+            except Exception as e:
+                gradient_numerical = approx_fprime(partial_x, fun_m, 1e-5)
+                gradient_analytic = grad_m(partial_x)
+
+                raise e
 
 
 def test_from_const():
