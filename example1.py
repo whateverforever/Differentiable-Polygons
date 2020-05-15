@@ -434,6 +434,7 @@ class MultiPolygon:
         ax=None,
         title=None,
         debug=False,
+        debug_holes=False,
         draw_grads: List[str] = None,
     ):
         def get_poly_path(points2D):
@@ -449,6 +450,24 @@ class MultiPolygon:
             path = Path(points2D, codes)
             return path
 
+        def highlight_and_number_points(points, ax, ipoly):
+            red = np.random.uniform(0, 1)
+            green = np.random.uniform(0, 1)
+            blue = np.random.uniform(0, 1)
+
+            facecolor = [red, green, blue, 0.5]
+            textcolor = [red * 0.75, green * 0.75, blue * 0.75, 1.0]
+
+            for i, pt in enumerate(points):
+                ax.text(*pt, i, {"color": textcolor})
+            ax.scatter(*zip(*points), c=[textcolor])
+            ax.text(
+                *np.mean(points, axis=0),
+                "poly {}\n({} verts)".format(ipoly, len(points)),
+                {"color": textcolor}
+            )
+            return facecolor
+
         fig = None
         if ax is None:
             fig, ax = plt.subplots()
@@ -459,33 +478,22 @@ class MultiPolygon:
             points2D = [(point.x, point.y) for point in poly._points]
 
             facecolor = "orange"
-
             if debug:
-                red = np.random.uniform(0, 1)
-                green = np.random.uniform(0, 1)
-                blue = np.random.uniform(0, 1)
-
-                facecolor = [red, green, blue, 0.5]
-                textcolor = [red * 0.75, green * 0.75, blue * 0.75, 1.0]
-
-                for i, pt in enumerate(points2D):
-                    ax.text(*pt, i, {"color": textcolor})
-                ax.scatter(*zip(*points2D), c=[textcolor])
-                ax.text(
-                    *np.mean(points2D, axis=0),
-                    "poly {}\n({} verts)".format(ipoly, len(points2D)),
-                    {"color": textcolor}
-                )
+                facecolor = highlight_and_number_points(points2D, ax, ipoly)
 
             path_poly = get_poly_path(points2D)
             patch_poly = patches.PathPatch(path_poly, facecolor=facecolor, lw=0.25)
             ax.add_patch(patch_poly)
 
-            for holepts in poly._holes:
+            for ihole, holepts in enumerate(poly._holes):
                 points2D = [(point.x, point.y) for point in holepts]
 
+                facecolor = "white"
+                if debug_holes:
+                    facecolor = highlight_and_number_points(points2D, ax, ihole)
+
                 path_hole = get_poly_path(points2D)
-                patch_hole = patches.PathPatch(path_hole, facecolor="white", lw=0.25)
+                patch_hole = patches.PathPatch(path_hole, facecolor=facecolor, lw=0.25)
                 ax.add_patch(patch_hole)
 
         if draw_grads is not None:
