@@ -472,34 +472,23 @@ def test_intersection():
 
 
 @given(
-    reals2(min_value=-1000, max_value=1000),
-    reals2(min_value=-1000, max_value=1000),
-    reals2(min_value=-1000, max_value=1000),
-    reals2(min_value=-1000, max_value=1000),
+    reals2(min_value=-100, max_value=100),
+    reals2(min_value=-100, max_value=100),
+    reals2(min_value=-100, max_value=100),
+    reals2(min_value=-100, max_value=100),
 )
 def test_intersection_grad(m1, m2, b1, b2):
     if np.isclose(m1, m2, atol=1):
         return
 
     def f(m1) -> Point:
-        # Imagine a line like a clock dial
-        m1 = Param("m1", float(m1))
+        m1, = m1
+        m1 = Param("m1", m1)
 
         line_a = Line(m1, b1)
         line_b = Line(m2, b2)
-
-        # As we wiggle its slope, the x-coordinate shifts, while the
-        # y-coordinate stays untouched
         intersect2 = line_a.intersect(line_b)
+
         return intersect2
 
-    # m = 1.23
-    # intersect2 = f(m1)
-
-    x_fun = lambda m: f(m).x
-    y_fun = lambda m: f(m).y
-    x_grad = lambda m: float(f(m).grads["m1"][0])
-    y_grad = lambda m: float(f(m).grads["m1"][1])
-
-    assert check_grad(x_fun, x_grad, np.array([m1])) < 1e-3
-    assert check_grad(y_fun, y_grad, np.array([m1])) < 1e-3
+    check_all_grads(f, [m1])
