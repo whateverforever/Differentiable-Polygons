@@ -1,3 +1,10 @@
+"""
+End-to-end example of a simple optimization problem that makes use of the gradients
+computed by the library. The problem is basically a very small inverse kinematics
+problem with a unique solution.
+"""
+
+import timeit
 import numpy as np  # type:ignore
 import matplotlib.pyplot as plt  # type:ignore
 from scipy import optimize  # type: ignore
@@ -25,25 +32,25 @@ def parametric_pt(l, theta):
     return dist
 
 
+def f(x):
+    l, theta = x
+    dist = parametric_pt(*x)
+
+    return dist.value
+
+
+def jac(x):
+    l, theta = x
+    dist = parametric_pt(l, theta)
+
+    grads = []
+    for param in ["l", "theta"]:
+        grads.append(dist.grads[param])
+    return np.squeeze(grads)
+
+
 def main():
     print("Go ####################\n\n")
-
-    def f(x):
-        l, theta = x
-        dist = parametric_pt(*x)
-
-        return dist.value
-
-    def jac(x):
-        l, theta = x
-        dist = parametric_pt(l, theta)
-
-        grads = []
-        for param in ["l", "theta"]:
-            grads.append(dist.grads[param])
-
-        # print("grad={}, norm={}".format(np.squeeze(grads), np.linalg.norm(np.squeeze(grads))))
-        return np.squeeze(grads)
 
     x0 = [1.0, np.radians(40)]
     xs = []
@@ -51,17 +58,34 @@ def main():
     def reporter(xk):
         xs.append(xk)
 
-    res = optimize.minimize(f, x0, method="CG", jac=jac, callback=reporter)
-    length_reached = parametric_pt(*res.x)
+    res_jacced = optimize.minimize(f, x0, method="CG", jac=jac, callback=reporter)
+    length_reached = parametric_pt(*res_jacced.x)
+
+    res_numeric = optimize.minimize(f, x0, method="CG")
+
+    print(f"Analytical gradients needed {res_jacced.nfev} fun evals")
+    print(f"Numerical gradients needed {res_numeric.nfev} fun evals")
+    print("\n")
+    print("x initial: {}".format(x0))
+    print("x final: {}".format(res_jacced.x))
+    print("\n")
+    print("Initial distance: {}".format(f(x0)))
+    print(
+        "Final   distance: {}, gradient norm: l={:.2f}, theta={:.2f}".format(
+            length_reached.value,
+            np.linalg.norm(length_reached.grads["l"]),
+            np.linalg.norm(length_reached.grads["theta"]),
+        )
+    )
+    print("\n")
+
+    ## Plotting
 
     xs = np.array(xs)
-    fig, axes = plt.subplots(ncols=3)
-
     xxs, yys = np.meshgrid(
         np.linspace(np.min(xs[:, 0]), np.max(xs[:, 0]), 50),
         np.linspace(np.min(xs[:, 1]), np.max(xs[:, 1]), 50),
     )
-
     zzs = np.zeros_like(xxs)
     jjs = np.zeros((xxs.shape[0], xxs.shape[1], 2))
     for ix, x in enumerate(np.linspace(np.min(xs[:, 0]), np.max(xs[:, 0]), 50)):
@@ -69,6 +93,7 @@ def main():
             zzs[iy, ix] = f([x, y])
             jjs[iy, ix] = jac([x, y])
 
+    fig, axes = plt.subplots(ncols=3)
     a = axes[0].contourf(xxs, yys, zzs, levels=50)
     axes[0].contour(xxs, yys, zzs, levels=20, colors="k", linewidths=0.5)
     axes[0].plot(xs[:, 0], xs[:, 1], "-o")
@@ -84,8 +109,6 @@ def main():
     axes[1].set_ylabel("Objective Fun.")
     axes[1].set_xlabel("Iteration #")
 
-    print("Example jacobian of beginning: {}, end: {}".format(jac(xs[0]), jac(xs[-1])))
-
     axes[2].plot(range(len(xs)), [jac(x)[1] for x in xs])
     axes[2].set_title("Infty Norm of Jacobian")
     axes[2].set_ylabel("Norm of Jac.")
@@ -94,21 +117,28 @@ def main():
     plt.tight_layout()
     plt.show()
 
-    print(res)
-    print("x initial: {}".format(x0))
-    print("x final: {}".format(res.x))
+    nexecs = 3
+    nrepeats = 50
+    print("Going for statistical run time evaluation...")
+    print(f"Runs of {nexecs}, times {nrepeats} repeats for std...")
+    testcode_jacced = lambda: optimize.minimize(f, x0, method="CG", jac=jac)
+    testcode_numeric = lambda: optimize.minimize(f, x0, method="CG")
 
-    print("Jac at 2.9/0.6: {}".format(jac([2.9, 0.6])))
+    times_analytical = timeit.repeat(testcode_jacced, number=nexecs, repeat=nrepeats)
+    times_numeric = timeit.repeat(testcode_numeric, number=nexecs, repeat=nrepeats)
 
-    print("Initial distance: {}".format(f(x0)))
     print(
-        "Final   distance: {}, gradient norm: l={:.2f}, theta={:.2f}".format(
-            length_reached.value,
-            np.linalg.norm(length_reached.grads["l"]),
-            np.linalg.norm(length_reached.grads["theta"]),
+        "Analytic grads take {:.3f}s (min: {:.3f}, std: {:.3f})".format(
+            np.mean(times_analytical),
+            np.min(times_analytical),
+            np.std(times_analytical),
         )
     )
-    print("Jac at goal", jac(res.x))
+    print(
+        "Numerical grads take {:.3f}s (min: {:.3f}, std: {:.3f})".format(
+            np.mean(times_numeric), np.min(times_numeric), np.std(times_numeric)
+        )
+    )
 
 
 if __name__ == "__main__":
