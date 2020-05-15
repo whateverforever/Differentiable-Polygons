@@ -9,7 +9,7 @@ import numpy as np  # type:ignore
 import matplotlib.pyplot as plt  # type:ignore
 from scipy import optimize  # type: ignore
 
-from primitives import Point, Param, Vector
+from diff_polygons import Point, Param, Vector
 
 
 def parametric_pt(l, theta):
