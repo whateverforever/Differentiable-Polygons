@@ -61,18 +61,6 @@ def create_unit_cell(
 
     corner_top = line_left.intersect(line_right)
 
-    # fig, ax = plt.subplots()
-    # ax.plot([corner_top.x], [corner_top.y], "o")
-
-    # lims = (0, l.value, 10)
-    # line_horiz.plot(ax=ax, lims=lims)
-    # line_left.plot(ax=ax, lims=lims)
-    # line_right.plot(ax=ax, lims=lims)
-
-    # commented out because w float32 the 2e-8
-    # assert np.allclose(corner_top.grads["lower_angles"][0], [0.0])
-    assert corner_top.grads["lower_angles"][1][0] > 0
-
     vec_left_up = (corner_top - corner_left) / (corner_top - corner_left).norm()
     vec_bottom_left = (corner_left - corner_right) / (corner_left - corner_right).norm()
     vec_right_down = (corner_right - corner_top) / (corner_right - corner_top).norm()
@@ -83,11 +71,6 @@ def create_unit_cell(
     pt2s = corner_right + vec_bottom_left * (t + s)
     pt3 = corner_top + vec_right_down * t
     pt3s = corner_top + vec_right_down * (t + s)
-
-    # ax.plot(pt1.x, pt1.y, "o")
-
-    assert pt1.grads["lower_angles"][0][0] < 0
-    assert pt1.grads["lower_angles"][1][0] > 0
 
     # TODO: Check if gradients for d_dpt1 and d_dpt2 correct (pivot!)
     cut_lower = line_horiz.rotate_ccw(theta, pivot=corner_left).translate(
@@ -111,15 +94,6 @@ def create_unit_cell(
         vec_right_down * (t + s)
     )
 
-    # cut_lower.plot(ax=ax, lims=lims, label="lower")
-    # cut_lower2.plot(ax=ax, lims=lims, label="lowe2")
-    # cut_right.plot(ax=ax, lims=lims, label="right")
-    # cut_right2.plot(ax=ax, lims=lims, label="right2")
-    # cut_top.plot(ax=ax, lims=lims, label="top")
-    # cut_top2.plot(ax=ax, lims=lims, label="top2")
-
-    assert np.allclose(cut_lower.grads["t"], cut_lower2.grads["t"])
-
     tri_lr = cut_lower2.intersect(cut_right2)
     tri_ll = cut_lower2.intersect(cut_top2)
     tri_t = cut_top2.intersect(cut_right2)
@@ -135,10 +109,6 @@ def create_unit_cell(
     tri_lli = tri_ll + vec_tri_lu * c
     tri_ti = tri_t + vec_tri_rd * c
 
-    # plt.plot(tri_lr.x, tri_lr.y, "o", label="tri_lr")
-    # plt.plot(tri_ll.x, tri_ll.y, "o", label="tri_ll")
-    # plt.plot(tri_t.x, tri_t.y, "o", label="tri_t")
-
     pt1i_ = cut_lower.intersect(cut_right2)
     pt1i = pt1i_ - ((pt1i_ - pt1) / (pt1i_ - pt1).norm()) * c
 
@@ -147,15 +117,6 @@ def create_unit_cell(
 
     pt3i_ = cut_top.intersect(cut_lower2)
     pt3i = pt3i_ - ((pt3i_ - pt3) / (pt3i_ - pt3).norm()) * c
-
-    # plt.plot(pt1i.x, pt1i.y, "o", label="pt1i")
-    # plt.plot(pt2i.x, pt2i.y, "o", label="pt2i")
-    # plt.plot(pt3i.x, pt3i.y, "o", label="pt3i")
-
-    # plt.legend()
-    # plt.xlim((-0.05, 2.05))
-    # plt.ylim((-0.05, 1.8))
-    # plt.show()
 
     flank_lower = Polygon([corner_left, pt1, pt1i, tri_lri, tri_lr, pt2s])
     flank_right = Polygon([corner_right, pt2, pt2i, tri_ti, tri_t, pt3s])
