@@ -3,8 +3,7 @@ from hypothesis.strategies import integers, text, floats
 
 import numpy as np  # type:ignore
 from scipy.optimize import check_grad  # type:ignore
-from main import (
-    diffvec,
+from .primitives import (
     Scalar,
     Param,
     Point,
@@ -128,7 +127,7 @@ def test_norm_optimization():
 
         # should be reached for l=2.0, theta=30deg
         const_target = Vector(2 * 2.0 + 2.0 * np.sqrt(3) / 2, 2.0 * 0.5)
-        diff_vec = diffvec(pt4, const_target)
+        diff_vec = pt4 - const_target
         length = diff_vec.norm()
 
         return length, length.grads
@@ -177,9 +176,6 @@ def test_subtraction(x1, y1, x2, y2):
 
     assert diff_vec.x == x1 - x2
     assert diff_vec.y == y1 - y2
-
-    assert diff_vec.x == diffvec(pt1, pt2).x
-    assert diff_vec.y == diffvec(pt1, pt2).y
 
 
 @given(
@@ -235,30 +231,6 @@ def test_static_and_member_fun(x, y, shift_x, shift_y):
     assert np.allclose(version1.as_numpy(), version2.as_numpy())
     assert np.allclose(version1.grads["sx"], version2.grads["sx"])
     assert np.allclose(version1.grads["sy"], version2.grads["sy"])
-
-
-@given(reals, reals, reals, reals)
-def test_diffvec(x1, y1, x2, y2):
-    diff_vec = diffvec(Point(x1, y1), Point(x2, y2))
-
-    assert diff_vec.x == x1 - x2
-    assert diff_vec.y == y1 - y2
-
-
-@given(reals, reals, reals, reals)
-def test_diffvec_param(x1, y1, x2, y2):
-    x1 = Scalar.Param("x1", x1)
-    y1 = Scalar.Param("y1", y1)
-
-    x2 = Scalar.Param("x2", x2)
-    y2 = Scalar.Param("y2", y2)
-
-    diff_vec = diffvec(Point(x1, y1), Point(x2, y2))
-
-    assert np.allclose(diff_vec.grads["x1"], [[1], [0]])
-    assert np.allclose(diff_vec.grads["y1"], [[0], [1]])
-    assert np.allclose(diff_vec.grads["x2"], [[-1], [0]])
-    assert np.allclose(diff_vec.grads["y2"], [[0], [-1]])
 
 
 def test_parameter_translate():

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt  # type:ignore
 from matplotlib.path import Path  # type:ignore
 import matplotlib.patches as patches  # type:ignore
 
-from .main import Line, Vector, Point, Scalar, Param, GradientCarrier
+from .primitives import Line, Vector, Point, Scalar, Param, GradientCarrier
 
 # TODO: Opening fails, since triangle coords are not adapted
 
