@@ -16,6 +16,14 @@ class GradientCarrier:
     def grads(self):
         return copy.copy(self.gradients)
 
+    # TODO: Needs to be other way round. Ground truth being an array of values,
+    # and accessors like .x, .y, .m, .b etc should be @propertys
+    @property
+    def properties(self):
+        raise NotImplementedError(
+            "{} doesn't have `properties` implemented yet".format(self.__class__)
+        )
+
     def with_grads(self, grads):
         self_copy = copy.copy(self)
         self_copy.gradients = grads
@@ -53,6 +61,10 @@ class Scalar(GradientCarrier):
             return
 
         self.value = value
+
+    @property
+    def properties(self):
+        return [self.value]
 
     def __repr__(self):
         return "Scalar({:.4f})".format(self.value)
@@ -110,6 +122,10 @@ class Point(GradientCarrier):
         self.x = x.value
         self.y = y.value
         self.gradients = update_grads(inputs, local_grads)
+
+    @property
+    def properties(self):
+        return [self.x, self.y]
 
     def as_numpy(self):
         return np.array([[self.x], [self.y]])
@@ -187,7 +203,6 @@ class Point(GradientCarrier):
         return a * a + b * b <= eps * eps
 
     def mirror_across_line(pt: Point, line: Line) -> Point:
-        # TODO: Validate gradient in tests
         x = pt.x
         y = pt.y
 
@@ -355,6 +370,10 @@ class Line(GradientCarrier):
         self.m = m.value
         self.b = b.value
         self.gradients = update_grads(inputs, local_grads)
+
+    @property
+    def properties(self):
+        return [self.m, self.b]
 
     def __repr__(self):
         return f"Line(m={self.m:.4f}, b={self.b:.4f})"
