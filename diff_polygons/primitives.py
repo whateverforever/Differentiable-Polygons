@@ -317,8 +317,13 @@ def update_grads(
             )
             continue
 
-        incoming_parameters.extend(input_obj.gradients.keys())
-    incoming_parameters = list(set(incoming_parameters))
+        incoming_parameters.extend(
+            [
+                grad_name
+                for grad_name in input_obj.gradients.keys()
+                if grad_name not in incoming_parameters
+            ]
+        )
 
     # Parameters that previous operations don't know anything about
     # I.e. maybe we did translations on `l` before, and now a rotation
