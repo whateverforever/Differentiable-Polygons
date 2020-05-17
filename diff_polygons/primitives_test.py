@@ -48,6 +48,16 @@ def test_update_grads():
 
 
 class TestScalar:
+    @given(reals)
+    def test_coercion(self, val):
+        a = Param("a", val)
+        b = Scalar(a)
+        c = Scalar(val)
+
+        assert b.value == a.value
+        assert b.value == c.value
+        assert b.grads == a.grads
+
     def test_make_param(self):
         l = Scalar.Param("l", 2.0)
 
@@ -236,10 +246,10 @@ class TestPoint:
         assert np.isclose(np.sqrt(2), pt2.y)
 
     @given(
-        reals2(min_value=-1000, max_value=1000),
-        reals2(min_value=-1000, max_value=1000),
-        reals2(min_value=-1000, max_value=1000),
-        reals2(min_value=-1000, max_value=1000),
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
         reals2(min_value=-720, max_value=720),
     )
     def test_rotation_grad(self, x1, y1, x2, y2, angle):
@@ -255,10 +265,10 @@ class TestPoint:
             return pt1.rotate(pt2, angle)
 
         x1 = Param("x1", x1)
-        x2 = Param("x2", x2)
         y1 = Param("y1", y1)
+        x2 = Param("x2", x2)
         y2 = Param("y2", y2)
-        angle = Param("angle", angle)
+        angle = Param("angle", np.radians(angle))
         check_all_grads(f, [x1, y1, x2, y2, angle])
 
     @given(reals, reals, reals, reals)

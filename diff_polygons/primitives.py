@@ -75,7 +75,7 @@ class Scalar(GradientCarrier):
     def __add__(scal1: Scalar, scal2: Scalar) -> Scalar:
         scal1 = Scalar(scal1)
         scal2 = Scalar(scal2)
-        
+
         val_new = scal1.value + scal2.value
 
         inputs = {"scal1": scal1, "scal2": scal2}
@@ -266,9 +266,9 @@ class Point(GradientCarrier):
 
         return Scalar(l2_norm).with_grads_from_previous(inputs, _grads)
 
-    def rotate(pt: Point, origin: Point, angle_param: Scalar) -> Point:
+    def rotate(pt: Point, origin: Point, angle_rad: Scalar) -> Point:
         # TODO: Same for points, coercion
-        angle_param = Scalar(angle_param)
+        angle_rad = Scalar(angle_rad)
 
         x1 = pt.x
         y1 = pt.y
@@ -276,7 +276,7 @@ class Point(GradientCarrier):
         ox = origin.x
         oy = origin.y
 
-        angle = angle_param.value
+        angle = angle_rad.value
 
         x2 = (x1 - ox) * np.cos(angle) - (y1 - oy) * np.sin(angle) + ox
         y2 = (x1 - ox) * np.sin(angle) + (y1 - oy) * np.cos(angle) + oy
@@ -289,16 +289,18 @@ class Point(GradientCarrier):
             [-np.sin(angle), -np.cos(angle) + 1],
         ]
         d_dangle = [
-            [(x1 - ox) * (-np.sin(angle) - (y1 - oy) * np.cos(angle))],
-            [(x1 - ox) * np.cos(angle) + (y1 - oy) * (-np.sin(angle))],
+            [(oy - y1) * np.cos(angle) + (ox - x1) * np.sin(angle)],
+            [(-ox + x1) * np.cos(angle) + (oy - y1) * np.sin(angle)],
         ]
 
-        inputs = {"pt": pt, "origin": origin, "angle": angle_param}
+        inputs = {"pt": pt, "origin": origin, "angle": angle_rad}
 
         _grads = {}
         _grads["pt"] = d_dpt
         _grads["origin"] = d_dorigin
         _grads["angle"] = d_dangle
+
+        print("local grads", _grads["angle"])
 
         pt2 = Point(x2, y2).with_grads_from_previous(inputs, _grads)
 
