@@ -18,6 +18,8 @@ class GradientCarrier:
 
     # TODO: Needs to be other way round. Ground truth being an array of values,
     # and accessors like .x, .y, .m, .b etc should be @propertys
+    # TODO: Also supply gradient accessor that respects the ordering of the
+    # parameters. Maybe .jac() ?
     @property
     def properties(self):
         raise NotImplementedError(
@@ -61,6 +63,7 @@ class Scalar(GradientCarrier):
             return
 
         self.value = value
+        self.name = None
 
     @property
     def properties(self):
@@ -70,6 +73,9 @@ class Scalar(GradientCarrier):
         return "Scalar({:.4f})".format(self.value)
 
     def __add__(scal1: Scalar, scal2: Scalar) -> Scalar:
+        scal1 = Scalar(scal1)
+        scal2 = Scalar(scal2)
+        
         val_new = scal1.value + scal2.value
 
         inputs = {"scal1": scal1, "scal2": scal2}
@@ -85,6 +91,7 @@ class Scalar(GradientCarrier):
 
         return Scalar(val_new).with_grads_from_previous(inputs, grads)
 
+    # TODO: Add __mul__
     def __rmul__(self, scalar2):
         scalar1 = copy.deepcopy(self)
 
@@ -383,6 +390,7 @@ class Line(GradientCarrier):
     def __repr__(self):
         return f"Line(m={self.m:.4f}, b={self.b:.4f})"
 
+    # TODO: Remove, make into normal method
     @staticmethod
     def make_from_points(p1: Point, p2: Point):
         return Line.make_from_points_({"p1": p1, "p2": p2})

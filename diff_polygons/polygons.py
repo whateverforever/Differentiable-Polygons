@@ -152,6 +152,7 @@ class Polygon:
 
         return Polygon(points)
 
+    # TODO: also mirror holes
     def mirror_across_line(poly: Polygon, line: Line) -> Polygon:
         points = poly.points
         points_new = [point.mirror_across_line(line) for point in points]
@@ -167,6 +168,7 @@ class Polygon:
 
         return Polygon(points_new, holes_new)
 
+    # TODO: also rotate holes
     def rotate(poly: Polygon, origin: Point, angle: Scalar) -> Polygon:
         points = poly.points
         points_new = [point.rotate(origin, angle) for point in points]
@@ -174,6 +176,9 @@ class Polygon:
         return Polygon(points_new)
 
     def is_oriented_ccw(poly: Polygon) -> bool:
+        """
+        Checks if exterior points are oriented counter-clockwise
+        """
         edge_sum = 0
         points = poly.points
 
@@ -198,6 +203,7 @@ class Polygon:
     def flip_orientation(poly: Polygon) -> Polygon:
         return Polygon(poly._points[::-1])
 
+    # TODO: Profile, check when KDTree becomes better
     def num_verts_shared_with(poly1: Polygon, poly2: Polygon) -> int:
         if not poly1.bounding_box_intersects(poly2, grow=0.05):
             return 0
@@ -283,6 +289,7 @@ class MultiPolygon:
     def as_numpy(mpoly: MultiPolygon, close=False):
         return np.array([poly.as_numpy(close=close) for poly in mpoly.polygons])
 
+    # TODO: Make shorter, make simpler
     def draw(
         mpoly: MultiPolygon,
         ax=None,
@@ -398,13 +405,13 @@ class MultiPolygon:
 
         return MultiPolygon(polygons_new)
 
-    # TODO: Add to original repo
     def translate(mpoly: MultiPolygon, vec: Vector) -> MultiPolygon:
         polygons = mpoly.polygons
         polygons_new = [poly.translate(vec) for poly in polygons]
 
         return MultiPolygon(polygons_new)
 
+    # TODO: Make simpler, maker shorter
     def join_polygons(multipoly: MultiPolygon) -> MultiPolygon:
         """
         Takes a list of polygons, some of which might be connectable. It then recursively
