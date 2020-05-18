@@ -72,6 +72,9 @@ class Scalar(GradientCarrier):
     def __repr__(self):
         return "Scalar({:.4f})".format(self.value)
 
+    def __radd__(scal1: Scalar, scal2: Any) -> Scalar:
+        return scal1 + scal2
+
     def __add__(scal1: Scalar, scal2: Scalar) -> Scalar:
         scal1 = Scalar(scal1)
         scal2 = Scalar(scal2)
@@ -83,6 +86,15 @@ class Scalar(GradientCarrier):
 
         return Scalar(val_new).with_grads_from_previous(inputs, grads)
 
+    def __rsub__(scal1: Scalar, scal2: Any) -> Scalar:
+        return -scal1 + scal2
+
+    def __sub__(scal1: Scalar, scal2: Scalar) -> Scalar:
+        scal1 = Scalar(scal1)
+        scal2 = -Scalar(scal2)
+
+        return scal1 + scal2
+
     def __neg__(scalar_old: Scalar):
         val_new = -scalar_old.value
 
@@ -91,13 +103,24 @@ class Scalar(GradientCarrier):
 
         return Scalar(val_new).with_grads_from_previous(inputs, grads)
 
-    # TODO: Add __mul__
-    def __rmul__(self, scalar2):
-        scalar1 = copy.deepcopy(self)
+    def __truediv__(scal1: Scalar, scal2: Scalar) -> Scalar:
+        scal1 = Scalar(scal1)
+        scal2 = Scalar(scal2)
 
-        scalar2 = Scalar(scalar2)
+        inputs = {"scal1": scal1, "scal2": scal2}
+        local_grads = {"scal1": [[1/scal2.value]], "scal2": [[-scal1.value/(scal2.value**2)]]}
+
+        return Scalar(scal1.value / scal2.value).with_grads_from_previous(inputs, local_grads)
+
+    def __rmul__(scal1: Scalar, scal2: Any) -> Scalar:
+        return scal1 * scal2
+
+    def __mul__(scal1: Scalar, scal2: Scalar) -> Scalar:
+        scalar1 = Scalar(scal1)
+        scalar2 = Scalar(scal2)
+
         inputs = {"scalar1": scalar1, "scalar2": scalar2}
-        local_grads = {"scalar2": [[scalar1.value]], "scalar1": [[scalar2.value]]}
+        local_grads = {"scalar1": [[scalar2.value]], "scalar2": [[scalar1.value]]}
 
         return Scalar(scalar1.value * scalar2.value).with_grads_from_previous(
             inputs, local_grads

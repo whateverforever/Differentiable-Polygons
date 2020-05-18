@@ -68,14 +68,56 @@ class TestScalar:
 
         assert isinstance(l, Scalar)
 
-    @given(reals, reals)
+
+    @given(
+        reals2(min_value=-1000, max_value=1000), reals2(min_value=-1000, max_value=1000)
+    )
     def test_add(self, real1, real2):
-        s1 = Scalar(real1)
-        s2 = Scalar(real2)
+        s1 = Scalar.Param("s1", real1)
+        s2 = Scalar.Param("s2", real2)
 
-        s3 = s1 + s2
+        f = lambda x: x[0] + x[1]
 
-        assert s3.value == real1 + real2
+        # Scalar - Scalar
+        assert f([s1, s2]).value == real1 + real2
+        check_all_grads(f, [s1, s2])
+
+        # Scalar - float
+        assert (s1 + real2).value == real1 + real2
+        # float - Scalar
+        assert (real1 + s2).value == real1 + real2
+    
+    @given(
+        reals2(min_value=-1000, max_value=1000), reals2(min_value=-1000, max_value=1000)
+    )
+    def test_sub(self, real1, real2):
+        s1 = Scalar.Param("s1", real1)
+        s2 = Scalar.Param("s2", real2)
+
+        f = lambda x: x[0] - x[1]
+        s3 = f([s1, s2])
+
+        # Scalar - Scalar
+        assert s3.value == real1 - real2
+        check_all_grads(f, [s1, s2])
+
+        # Scalar - float
+        assert (s1 - real2).value == real1 - real2
+        # float - Scalar
+        assert (real1 - s2).value == real1 - real2
+    
+    def test_mul(self):
+        l = Scalar.Param("l", 2.0)
+
+        assert isinstance(2 * l, Scalar)
+        assert (2 * l).value == 4.0
+
+        assert set((2 * l).grads.keys()) == {"l"}
+        assert (2 * l).grads["l"].shape == (1, 1)
+        assert np.isclose((2 * l).grads["l"], [[2.0]])
+
+        pt = Point(0, 2 * l)
+        assert np.allclose(pt.grads["l"], [[0.0], [2.0]])
 
     @given(
         reals2(min_value=-1000, max_value=1000), reals2(min_value=-1000, max_value=1000)
@@ -100,21 +142,9 @@ class TestScalar:
         assert result.value == -real1
         check_all_grads(f, [p1])
 
-    def test_mul(self):
-        l = Scalar.Param("l", 2.0)
-
-        assert isinstance(2 * l, Scalar)
-        assert (2 * l).value == 4.0
-
-        assert set((2 * l).grads.keys()) == {"l"}
-        assert (2 * l).grads["l"].shape == (1, 1)
-        assert np.isclose((2 * l).grads["l"], [[2.0]])
-
-        pt = Point(0, 2 * l)
-        assert np.allclose(pt.grads["l"], [[0.0], [2.0]])
-
-    def test_recursive_params(self):
-        l = Scalar.Param("l", 2.0)
+    @given(reals)
+    def test_recursive_params(self, some_real):
+        l = Scalar.Param("l", some_real)
         l2 = Scalar.Param("l2", 0.5 * l)
 
         assert np.allclose(l2.grads["l2"], [[1]])
