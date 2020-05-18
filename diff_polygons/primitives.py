@@ -4,6 +4,7 @@ import copy
 import typing as ty
 import warnings
 import numpy as np  # type: ignore
+import matplotlib.pyplot as plt # type: ignore
 
 from numbers import Number
 
@@ -387,6 +388,76 @@ def update_grads(
 
         out_grads[param] = grads
     return out_grads
+
+
+class Line2(GradientCarrier):
+    """
+    An infinite line. Parametrized by origin and direction vector. (4 parameters)
+    """
+
+    def __init__(self, ox, oy, dx, dy):
+        super().__init__()
+
+        ox = Scalar(ox)
+        oy = Scalar(oy)
+
+        dx = Scalar(dx)
+        dy = Scalar(dy)
+
+        self._params = [ox, oy, dx, dy]
+
+    @staticmethod
+    def make_from_points(pt1: Point, pt2: Point) -> Line2:
+        direction = (pt2 - pt1)/Scalar(np.linalg.norm((pt2 - pt1).as_numpy().ravel()))
+        return Line2(pt1.x, pt1.y, direction.x, direction.y)
+
+    @property
+    def ox(self):
+        return self._params[0]
+
+    @property
+    def oy(self):
+        return self._params[1]
+
+    @property
+    def dx(self):
+        return self._params[2]
+
+    @property
+    def dy(self):
+        return self._params[3]
+
+    def eval_at(line: Line2, s) -> Point:
+        s = Scalar(s)
+
+        x = line.ox + s * line.dx
+        y = line.oy + s * line.dy
+
+        return Point(x, y)
+
+    def intersect(line1: Line2, line2: Line2) -> Point:
+        o2x = line1.ox
+        o1x = line2.ox
+
+        o2y = line1.oy
+        o1y = line2.oy
+
+        d2x = line1.dx
+        d1x = line2.dx
+
+        d2y = line1.dy
+        d1y = line2.dy
+
+        s1 = ((o2y - o1y) * d1x - (o2x - o1x) * d1y) / (d2x * d1y - d2y * d1x)
+
+        return line1.eval_at(s1)
+    
+    def plot(self, ax=plt):
+        s = np.arange(0,10)
+        pts = [self.eval_at(si) for si in s]
+        xys = [(pt.x, pt.y) for pt in pts]
+        
+        ax.plot(*zip(*xys))
 
 
 class Line(GradientCarrier):

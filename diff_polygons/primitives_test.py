@@ -11,6 +11,7 @@ from .primitives import (
     Point,
     Vector,
     Line,
+    Line2,
     update_grads,
 )  # type:ignore
 
@@ -351,6 +352,29 @@ class TestPoint:
         assert np.allclose(res.grads["xx"], [[s.value], [0.0]])
         assert np.allclose(res.grads["yy"], [[0.0], [s.value]])
 
+class TestLine2:
+    def test_from_points(self):
+        pt1 = Point(1, 1)
+        pt2 = pt1.translate(Point(1.23, 0))
+        line = Line2.make_from_points(pt2, pt1)
+    
+    def test_intersection(self):
+        line1 = Line2.make_from_points(Point(0, 1), Point(1, 2))
+        line2 = Line2.make_from_points(Point(4, 0), Point(3, 2))
+
+        intersect = line1.intersect(line2)
+
+        assert np.isclose(intersect.x, 2.3333333333)
+        assert np.isclose(intersect.y, 3.3333333333)
+
+        h = Param("h", 2.0)
+        line_a = Line2.make_from_points(Point(0, 0), Point(1, 1))
+        line_horiz = Line2.make_from_points(Point(0, h), Point(5, h))
+
+        intersect = line_a.intersect(line_horiz)
+        intersect_2 = line_horiz.intersect(line_a)
+        assert np.allclose(intersect.as_numpy(), [[2], [2]])
+        assert np.allclose(intersect.as_numpy(), intersect_2.as_numpy())
 
 class TestLine:
     def test_from_points(self):
