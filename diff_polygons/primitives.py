@@ -323,8 +323,6 @@ class Point(GradientCarrier):
         _grads["origin"] = d_dorigin
         _grads["angle"] = d_dangle
 
-        print("local grads", _grads["angle"])
-
         pt2 = Point(x2, y2).with_grads_from_previous(inputs, _grads)
 
         return pt2
