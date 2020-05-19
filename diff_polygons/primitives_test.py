@@ -4,7 +4,6 @@ from hypothesis import given, reject
 from hypothesis.strategies import integers, text, floats
 
 import numpy as np  # type:ignore
-from scipy.optimize import check_grad, approx_fprime  # type:ignore
 from .primitives import (
     Scalar,
     Param,
@@ -126,21 +125,8 @@ class TestScalar:
         # float - Scalar
         assert (real1 * s2).value == real1 * real2
 
-    @given(
-        reals2(min_value=-1000, max_value=1000), reals2(min_value=-1000, max_value=1000)
-    )
-    def test_param_add(self, real1, real2):
-        f = lambda x: x[0] + x[1]
-
-        p1 = Param("param1", real1)
-        p2 = Param("param2", real2)
-        p3 = f([p1, p2])
-
-        assert p3.value == real1 + real2
-        check_all_grads(f, [p1, p2])
-
     @given(reals2(min_value=-1000, max_value=1000))
-    def test_param_neg(self, real1):
+    def test_neg(self, real1):
         f = lambda x: -x[0]
 
         p1 = Param("param1", real1)
@@ -507,8 +493,17 @@ class TestLine:
         assert np.allclose(line.grads["param_m"], [[1], [0]])
         assert np.allclose(line.grads["param_b"], [[0], [1]])
 
+def central_diff(fun,x,epsilon):
+    return (fun(x+epsilon) - fun(x-epsilon))/(2*epsilon)
 
-def check_all_grads(fun, x: List[Param], tol=1e-5):
+def check_grad_c(fun,gradfun,x,epsilon):
+    diff = central_diff(fun,x,epsilon)
+
+    grad_analytic = gradfun(x)
+
+    return abs(grad_analytic - diff)
+
+def check_all_grads(fun, x: List[Param], tol=1e-6, eps=1e-5):
     """
     Takes a GradientCarrier object and checks all its gradients against the 
     numerical equivalent.
@@ -543,9 +538,9 @@ def check_all_grads(fun, x: List[Param], tol=1e-5):
             partial_x = np.array([xx[igrad]])
 
             try:
-                assert check_grad(fun_m, grad_m, partial_x, epsilon=1e-5) < tol
+                assert check_grad_c(fun_m, grad_m, partial_x, epsilon=eps) < tol
             except Exception as e:
-                gradient_numerical = approx_fprime(partial_x, fun_m, 1e-5)
+                gradient_numerical = central_diff(partial_x, fun_m, epsilon=eps)
                 gradient_analytic = grad_m(partial_x)
 
                 print(f"In output {iout}, failing in grad `{grad_name}`")
@@ -553,3 +548,5 @@ def check_all_grads(fun, x: List[Param], tol=1e-5):
                 print(f"Grad analytical: {gradient_analytic}")
 
                 raise e
+
+        
