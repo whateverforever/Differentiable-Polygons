@@ -68,7 +68,6 @@ class TestScalar:
 
         assert isinstance(l, Scalar)
 
-
     @given(
         reals2(min_value=-1000, max_value=1000), reals2(min_value=-1000, max_value=1000)
     )
@@ -86,7 +85,7 @@ class TestScalar:
         assert (s1 + real2).value == real1 + real2
         # float - Scalar
         assert (real1 + s2).value == real1 + real2
-    
+
     @given(
         reals2(min_value=-1000, max_value=1000), reals2(min_value=-1000, max_value=1000)
     )
@@ -105,14 +104,12 @@ class TestScalar:
         assert (s1 - real2).value == real1 - real2
         # float - Scalar
         assert (real1 - s2).value == real1 - real2
-    
-    @given(
-        reals2(min_value=-100, max_value=100), reals2(min_value=-100, max_value=100)
-    )
+
+    @given(reals2(min_value=-100, max_value=100), reals2(min_value=-100, max_value=100))
     def test_mul(self, real1, real2):
         s1 = Scalar.Param("s1", real1)
         s2 = Scalar.Param("s2", real2)
-        
+
         f = lambda x: x[0] * x[1]
         s3 = f([s1, s2])
 
@@ -339,7 +336,7 @@ class TestPoint:
 
         pt1 = Point(x1, y1)
         pt2 = Point(x2, y2)
-        
+
         # TODO: Remove .value by allowing Scalar
         # to be compared to a float (ignoring the gradient information)
         assert (pt1 + pt2).x == (x1 + x2).value
@@ -366,12 +363,13 @@ class TestPoint:
         assert np.allclose(res.grads["xx"], [[s.value], [0.0]])
         assert np.allclose(res.grads["yy"], [[0.0], [s.value]])
 
+
 class TestLine2:
     def test_from_points(self):
         pt1 = Point(1, 1)
         pt2 = pt1.translate(Point(1.23, 0))
         line = Line2.make_from_points(pt2, pt1)
-    
+
     def test_intersection(self):
         line1 = Line2.make_from_points(Point(0, 1), Point(1, 2))
         line2 = Line2.make_from_points(Point(4, 0), Point(3, 2))
@@ -389,6 +387,7 @@ class TestLine2:
         intersect_2 = line_horiz.intersect(line_a)
         assert np.allclose(intersect.as_numpy(), [[2], [2]])
         assert np.allclose(intersect.as_numpy(), intersect_2.as_numpy())
+
 
 class TestLine:
     def test_from_points(self):
@@ -515,15 +514,18 @@ class TestLine:
         assert np.allclose(line.grads["param_m"], [[1], [0]])
         assert np.allclose(line.grads["param_b"], [[0], [1]])
 
-def central_diff(fun,x,epsilon):
-    return (fun(x+epsilon) - fun(x-epsilon))/(2*epsilon)
 
-def check_grad_c(fun,gradfun,x,epsilon):
-    diff = central_diff(fun,x,epsilon)
+def central_diff(fun, x, epsilon):
+    return (fun(x + epsilon) - fun(x - epsilon)) / (2 * epsilon)
+
+
+def check_grad_c(fun, gradfun, x, epsilon):
+    diff = central_diff(fun, x, epsilon)
 
     grad_analytic = gradfun(x)
 
     return abs(grad_analytic - diff)
+
 
 def check_all_grads(fun, x: List[Param], tol=1e-5, eps=1e-6):
     """
@@ -571,4 +573,3 @@ def check_all_grads(fun, x: List[Param], tol=1e-5, eps=1e-6):
 
                 raise e
 
-        
