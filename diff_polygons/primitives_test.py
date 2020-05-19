@@ -543,13 +543,13 @@ def check_all_grads(fun, x: List[Param], tol=1e-5):
             partial_x = np.array([xx[igrad]])
 
             try:
-                assert check_grad(fun_m, grad_m, partial_x) < tol
+                assert check_grad(fun_m, grad_m, partial_x, epsilon=1e-5) < tol
             except Exception as e:
                 gradient_numerical = approx_fprime(partial_x, fun_m, 1e-5)
                 gradient_analytic = grad_m(partial_x)
 
                 print(f"In output {iout}, failing in grad `{grad_name}`")
-                print(f"Grad numerical: {gradient_numerical}")
+                print(f"Grad numerical:  {gradient_numerical[0]}")
                 print(f"Grad analytical: {gradient_analytic}")
 
                 raise e
