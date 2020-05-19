@@ -4,7 +4,7 @@ import copy
 import typing as ty
 import warnings
 import numpy as np  # type: ignore
-import matplotlib.pyplot as plt # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
 
 from numbers import Number
 
@@ -109,9 +109,14 @@ class Scalar(GradientCarrier):
         scal2 = Scalar(scal2)
 
         inputs = {"scal1": scal1, "scal2": scal2}
-        local_grads = {"scal1": [[1/scal2.value]], "scal2": [[-scal1.value/(scal2.value**2)]]}
+        local_grads = {
+            "scal1": [[1 / scal2.value]],
+            "scal2": [[-scal1.value / (scal2.value ** 2)]],
+        }
 
-        return Scalar(scal1.value / scal2.value).with_grads_from_previous(inputs, local_grads)
+        return Scalar(scal1.value / scal2.value).with_grads_from_previous(
+            inputs, local_grads
+        )
 
     def __rmul__(scal1: Scalar, scal2: Any) -> Scalar:
         return scal1 * scal2
@@ -419,7 +424,7 @@ class Line2(GradientCarrier):
 
     @staticmethod
     def make_from_points(pt1: Point, pt2: Point) -> Line2:
-        direction = (pt2 - pt1)/Scalar(np.linalg.norm((pt2 - pt1).as_numpy().ravel()))
+        direction = (pt2 - pt1) / Scalar(np.linalg.norm((pt2 - pt1).as_numpy().ravel()))
         return Line2(pt1.x, pt1.y, direction.x, direction.y)
 
     @property
