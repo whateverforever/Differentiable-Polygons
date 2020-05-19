@@ -185,7 +185,7 @@ class Point(GradientCarrier):
         raise NotImplementedError("__truediv__ not yet impl for normal numbers")
 
     def __eq__(pt1: Point, pt2: Point) -> bool:
-        coords_equal = np.isclose(pt1.x, pt2.x) and np.isclose(pt1.y, pt2.y)
+        coords_equal = pt1.same_as(pt2)
         grads_equal = True
 
         for key, val in pt1.grads.items():
