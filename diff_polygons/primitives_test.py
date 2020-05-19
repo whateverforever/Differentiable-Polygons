@@ -520,7 +520,7 @@ def check_grad_c(fun,gradfun,x,epsilon):
 
     return abs(grad_analytic - diff)
 
-def check_all_grads(fun, x: List[Param], tol=1e-6, eps=1e-5):
+def check_all_grads(fun, x: List[Param], tol=1e-5, eps=1e-6):
     """
     Takes a GradientCarrier object and checks all its gradients against the 
     numerical equivalent.
@@ -557,11 +557,11 @@ def check_all_grads(fun, x: List[Param], tol=1e-6, eps=1e-5):
             try:
                 assert check_grad_c(fun_m, grad_m, partial_x, epsilon=eps) < tol
             except Exception as e:
-                gradient_numerical = central_diff(partial_x, fun_m, epsilon=eps)
+                gradient_numerical = central_diff(fun_m, partial_x, epsilon=eps)
                 gradient_analytic = grad_m(partial_x)
 
                 print(f"In output {iout}, failing in grad `{grad_name}`")
-                print(f"Grad numerical:  {gradient_numerical[0]}")
+                print(f"Grad numerical:  {gradient_numerical}")
                 print(f"Grad analytical: {gradient_analytic}")
 
                 raise e
