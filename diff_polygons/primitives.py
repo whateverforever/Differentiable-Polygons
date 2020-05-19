@@ -179,6 +179,17 @@ class Point(GradientCarrier):
 
         raise NotImplementedError("__truediv__ not yet impl for normal numbers")
 
+    def __eq__(pt1: Point, pt2: Point) -> bool:
+        coords_equal = np.isclose(pt1.x, pt2.x) and np.isclose(pt1.y, pt2.y)
+        grads_equal = True
+
+        for key, val in pt1.grads.items():
+            if key not in pt2.grads or not np.allclose(val, pt2.grads[key]):
+                grads_equal = False
+                break
+
+        return coords_equal and grads_equal
+
     def __mul__(pt: Point, other: ty.Union[Point, Scalar, Number]) -> Point:
         if isinstance(other, Scalar):
             new_x = pt.x * other.value
