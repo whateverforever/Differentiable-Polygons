@@ -323,8 +323,13 @@ class TestPoint:
             assert pt.y / s.value == res.y
         except ZeroDivisionError:
             pass
-    
-    @given(reals, reals, reals, reals)
+
+    @given(
+        reals2(min_value=-1000, max_value=1000),
+        reals2(min_value=-1000, max_value=1000),
+        reals2(min_value=-1000, max_value=1000),
+        reals2(min_value=-1000, max_value=1000),
+    )
     def test_add(self, x1, y1, x2, y2):
         x1 = Param("x1", x1)
         y1 = Param("y1", y1)
