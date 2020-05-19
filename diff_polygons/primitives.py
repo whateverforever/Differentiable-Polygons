@@ -467,12 +467,12 @@ class Line2(GradientCarrier):
         s1 = ((o2y - o1y) * d1x - (o2x - o1x) * d1y) / (d2x * d1y - d2y * d1x)
 
         return line1.eval_at(s1)
-    
+
     def plot(self, ax=plt):
-        s = np.arange(0,10)
+        s = np.arange(0, 10)
         pts = [self.eval_at(si) for si in s]
         xys = [(pt.x, pt.y) for pt in pts]
-        
+
         ax.plot(*zip(*xys))
 
 
