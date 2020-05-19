@@ -323,6 +323,23 @@ class TestPoint:
             assert pt.y / s.value == res.y
         except ZeroDivisionError:
             pass
+    
+    @given(reals, reals, reals, reals)
+    def test_add(self, x1, y1, x2, y2):
+        x1 = Param("x1", x1)
+        y1 = Param("y1", y1)
+
+        x2 = Param("x2", x2)
+        y2 = Param("y2", y2)
+
+        pt1 = Point(x1, y1)
+        pt2 = Point(x2, y2)
+        
+        # TODO: Remove .value by allowing Scalar
+        # to be compared to a float (ignoring the gradient information)
+        assert (pt1 + pt2).x == (x1 + x2).value
+        assert (pt1 + pt2).y == (y1 + y2).value
+        assert pt1 + pt2 == pt2 + pt1
 
     @given(reals, reals, reals)
     def test_mul(self, x, y, scalar):
