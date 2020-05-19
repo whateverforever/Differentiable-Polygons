@@ -355,15 +355,6 @@ def update_grads(
 ):
     incoming_parameters = []
     for input_name, input_obj in inputs.items():
-        if not isinstance(input_obj, GradientCarrier):
-            warnings.warn(
-                "Got non-GradientCarrier obj of type {} as input. Won't have gradient"
-                " information, so please remove or replace by Scalar or Vector: {}".format(
-                    type(input_obj), input_obj
-                )
-            )
-            continue
-
         incoming_parameters.extend(
             [
                 grad_name
@@ -391,9 +382,6 @@ def update_grads(
 
         # If we have inputs that depended on parameters
         for input_name, input_obj in inputs_items:
-            # TODO: Same as above
-            if not isinstance(input_obj, GradientCarrier):
-                continue
             # If one of the inputs doesn't depend on the parameter, we simply
             # ignore it. No gradient information in there!
             if param in input_obj.gradients:
