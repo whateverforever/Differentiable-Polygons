@@ -107,18 +107,24 @@ class TestScalar:
         # float - Scalar
         assert (real1 - s2).value == real1 - real2
     
-    def test_mul(self):
-        l = Scalar.Param("l", 2.0)
+    @given(
+        reals2(min_value=-100, max_value=100), reals2(min_value=-100, max_value=100)
+    )
+    def test_mul(self, real1, real2):
+        s1 = Scalar.Param("s1", real1)
+        s2 = Scalar.Param("s2", real2)
+        
+        f = lambda x: x[0] * x[1]
+        s3 = f([s1, s2])
 
-        assert isinstance(2 * l, Scalar)
-        assert (2 * l).value == 4.0
+        # Scalar - Scalar
+        assert s3.value == real1 * real2
+        check_all_grads(f, [s1, s2])
 
-        assert set((2 * l).grads.keys()) == {"l"}
-        assert (2 * l).grads["l"].shape == (1, 1)
-        assert np.isclose((2 * l).grads["l"], [[2.0]])
-
-        pt = Point(0, 2 * l)
-        assert np.allclose(pt.grads["l"], [[0.0], [2.0]])
+        # Scalar - float
+        assert (s1 * real2).value == real1 * real2
+        # float - Scalar
+        assert (real1 * s2).value == real1 * real2
 
     @given(
         reals2(min_value=-1000, max_value=1000), reals2(min_value=-1000, max_value=1000)
