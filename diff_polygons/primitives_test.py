@@ -1,7 +1,7 @@
 from typing import List
 
-from hypothesis import given, reject
-from hypothesis.strategies import integers, text, floats
+from hypothesis import given
+from hypothesis.strategies import floats
 
 import numpy as np  # type:ignore
 from .primitives import (
