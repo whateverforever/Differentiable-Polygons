@@ -73,6 +73,20 @@ class Scalar(GradientCarrier):
     def __repr__(self):
         return "Scalar({:.4f})".format(self.value)
 
+    def __eq__(self: Scalar, other: Union[Scalar, float, int]):
+        if not isinstance(other, Scalar):
+            return np.isclose(self.value, other)
+        
+        coords_equal = self.value == other.value
+        grads_equal = True
+
+        for key, val in self.grads.items():
+            if key not in other.grads or not np.allclose(val, other.grads[key]):
+                grads_equal = False
+                break
+
+        return coords_equal and grads_equal
+
     def __radd__(scal1: Scalar, scal2: Any) -> Scalar:
         return scal1 + scal2
 

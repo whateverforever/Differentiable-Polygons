@@ -68,6 +68,18 @@ class TestScalar:
 
         assert isinstance(l, Scalar)
 
+    @given(reals)
+    def test_eq(self, real1):
+        a = Param("a", real1)
+        b = Param("a", real1)
+
+        assert a == a
+        assert a == b
+        assert b == a
+        
+        assert a == real1
+        assert real1 == a
+
     @given(
         reals2(min_value=-1000, max_value=1000), reals2(min_value=-1000, max_value=1000)
     )
