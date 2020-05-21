@@ -241,7 +241,7 @@ class Point(GradientCarrier):
         return [self.x, self.y]
 
     def as_numpy(self):
-        return np.array([[self.x], [self.y]])
+        return np.reshape([prop.value for prop in self.properties] ,(-1,1))
 
     def __repr__(self):
         return "Pt({:.4f},{:.4f})".format(self.x, self.y)
