@@ -571,18 +571,7 @@ class Line(GradientCarrier):
         b = (y1 * x2 - y2 * x1) / (x2 - x1)
         m = (y2 - b) / x2
 
-        dm_dp1 = [[(-y1 + y2) / (x1 - x2) ** 2, 1 / (x1 - x2)]]
-        dm_dp2 = [[(y1 - y2) / (x1 - x2) ** 2, 1 / (-x1 + x2)]]
-
-        db_dp1 = [[(x2 * (y1 - y2)) / (x1 - x2) ** 2, x2 / (-x1 + x2)]]
-        db_dp2 = [[(x1 * (-y1 + y2)) / (x1 - x2) ** 2, x1 / (x1 - x2)]]
-
-        local_grads = {}
-        local_grads["p1"] = d_dpt1 = np.vstack([dm_dp1, db_dp1])
-        local_grads["p2"] = d_dpt2 = np.vstack([dm_dp2, db_dp2])
-
-        new_line = Line(m, b).with_grads_from_previous(inputs, local_grads)
-        return new_line
+        return Line(m, b)
 
     def translate(a_line: Line, vec: Vector) -> Line:
         line_old = copy.deepcopy(a_line)
@@ -590,50 +579,23 @@ class Line(GradientCarrier):
         m = line_old.m
         b = line_old.b + vec.y - line_old.m * vec.x
 
-        inputs = {"vec": vec, "line": line_old}
-        grads = {}
-        grads["vec"] = [[0, 0], [-line_old.m, 1]]
-        grads["line"] = [[1, 0], [-vec.x, 1]]
-
-        new_line = Line(m, b).with_grads_from_previous(inputs, grads)
-
-        return new_line
+        return Line(m, b)
 
     def rotate_ccw(line1: Line, angle_rad: Scalar, pivot: Point = None) -> Line:
+        angle_rad = Scalar(angle_rad)
+        
         if pivot is None:
             pivot = Point(0, 0)
-
-        if not isinstance(angle_rad, Scalar):
-            angle_rad = Scalar(angle_rad)
 
         line_centered = line1.translate(-pivot)
 
         m = line_centered.m
         b = line_centered.b
 
-        m2 = np.tan(np.arctan(m) + angle_rad.value)
+        m2 = tan(arctan(m) + angle_rad)
         b2 = b
 
-        sec = lambda x: 1 / np.cos(x)
-        d_dangle = np.radians(sec(angle_rad.value + np.arctan(m)) ** 2)
-
-        local_grads = {}
-        local_grads["angle_rad"] = [
-            [d_dangle],
-            [0],
-        ]
-        local_grads["line_centered"] = [
-            [d_dangle / (1 + m ** 2), 0],
-            [0, 1],
-        ]
-
-        inputs = {"angle_rad": angle_rad, "line_centered": line_centered}
-
-        rotated_line = Line(m2, b2).with_grads_from_previous(inputs, local_grads)
-
-        new_line = rotated_line.translate(pivot)
-
-        return new_line
+        return Line(m2, b2).translate(pivot)
 
     def intersect(line_1: Line, line_2: Line) -> Point:
         m1 = line_1.m

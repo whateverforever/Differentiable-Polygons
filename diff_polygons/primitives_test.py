@@ -446,7 +446,7 @@ class TestLine:
 
             return line2
 
-        assert np.isclose(f([theta]).m, np.tan(theta.value))
+        assert np.isclose(f([theta]).m.value, np.tan(theta.value))
         assert f([theta]).b == real_b
         # check_all_grads(f, [theta])
 
