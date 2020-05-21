@@ -366,27 +366,7 @@ class Point(GradientCarrier):
         u = ((1 - m ** 2) * x + 2 * m * y - 2 * m * b) / (m ** 2 + 1)
         v = ((m ** 2 - 1) * y + 2 * m * x + 2 * b) / (m ** 2 + 1)
 
-        du_dpt = [[-1 + 2 / (1 + m ** 2), (2 * m) / (1 + m ** 2)]]
-        dv_dpt = [[(2 * m) / (1 + m ** 2), 1 - 2 / (1 + m ** 2)]]
-        dself_dpt = [*du_dpt, *dv_dpt]
-
-        du_dline = [
-            [
-                (2 * (b * (-1 + m ** 2) + y - m * (2 * x + m * y))) / (1 + m ** 2) ** 2,
-                -((2 * m) / (1 + m ** 2)),
-            ]
-        ]
-        dv_dline = [
-            [
-                (2 * x - 2 * m * (2 * b + m * x - 2 * y)) / (1 + m ** 2) ** 2,
-                2 / (1 + m ** 2),
-            ]
-        ]
-        dself_dline = [*du_dline, *dv_dline]
-        inputs = {"pt": pt, "line": line}
-        grads = {"pt": dself_dpt, "line": dself_dline}
-
-        return Point(u, v).with_grads_from_previous(inputs, grads)
+        return Point(u,v)
 
     def translate(pt: Point, vec: Point) -> Point:
         x2 = pt.x + vec.x
