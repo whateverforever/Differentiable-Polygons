@@ -170,6 +170,32 @@ class Scalar(GradientCarrier):
         return param
 
 
+def combine_gradients(carriers: ty.List[Scalar]):
+    inputs: ty.List[str] = []
+    for carrier in carriers:
+        inputs.extend([key for key in carrier.grads.keys() if key not in inputs])
+    # inputs = ["l", "sx", "sy",...]
+
+    grads = {}
+    for input_name in inputs:
+        grads[input_name] = [0] * len(carriers)
+    # grads = {'x1': [0, 0], 'x2': [0, 0], 'y1': [0, 0], 'y2': [0, 0]}
+
+    for iout, carrier in enumerate(carriers):
+        for input_name in inputs:
+            # grads {'x': array([[9.23958299e-10]]), 's': array([[-0.05108443]])}
+            if not input_name in carrier.grads:
+                continue
+            
+            dout_dinput = carrier.grads[input_name][0][0]
+            grads[input_name][iout] = dout_dinput
+
+    # turn into column vector
+    for gradname, gradvals in grads.items():
+        grads[gradname] = np.reshape(gradvals, [-1,1])
+
+    return grads
+
 class Point(GradientCarrier):
     def __init__(self, x, y):
         super().__init__()
