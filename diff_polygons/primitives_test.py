@@ -575,14 +575,14 @@ def check_all_grads(fun, x: List[Param], tol=1e-5, eps=1e-6):
     gradients = [param.name for param in x]
     xx = np.array(x)
 
-    for iout, output in enumerate(fun(x).properties):
+    for iout, output in enumerate(fun(x)._params):
         for igrad, grad_name in enumerate(gradients):
 
             def fun_m(x_scalar):
                 x_full = xx.copy()
                 x_full[igrad] = x_scalar[0]
 
-                return fun(x_full).properties[iout]
+                return fun(x_full)._params[iout]
 
             def grad_m(x_scalar):
                 x_full = xx.copy()

@@ -9,28 +9,24 @@ import matplotlib.pyplot as plt  # type: ignore
 from numbers import Number
 
 
+# TODO: Split this? Make only scalar GradientCarrier and Point, Line, etc.
+# are somehow groups of "gradiented" scalars?
 class GradientCarrier:
-    def __init__(self):
-        self.gradients = {}
+    @property
+    def gradients(self):
+        if isinstance(self, Scalar):
+            return self._basegradients
+
+        return combine_gradients(self._params)
+    
+    @gradients.setter
+    def gradients(self, new_grads):
+        if isinstance(self, Scalar):
+            self._basegradients = new_grads
 
     @property
     def grads(self):
         return copy.copy(self.gradients)
-
-    # TODO: Needs to be other way round. Ground truth being an array of values,
-    # and accessors like .x, .y, .m, .b etc should be @propertys
-    # TODO: Also supply gradient accessor that respects the ordering of the
-    # parameters. Maybe .jac() ?
-    @property
-    def properties(self):
-        raise NotImplementedError(
-            "{} doesn't have `properties` implemented yet".format(self.__class__)
-        )
-
-    def with_grads(self, grads):
-        self_copy = copy.copy(self)
-        self_copy.gradients = grads
-        return self_copy
 
     def with_grads_from_previous(self, inputs, local_grads):
         """
@@ -55,20 +51,24 @@ class GradientCarrier:
 
 class Scalar(GradientCarrier):
     def __init__(self, value):
-        super().__init__()
+        basegrads = {}
 
-        # TODO: Change, inelegant. Lookup how coercion is usually done
         if isinstance(value, Scalar):
-            self.value = value.value
-            self.gradients = value.gradients
-            return
+            basegrads = value.grads
+            value = value.value
 
-        self.value = value
+        self._basegradients = basegrads
+        self._params = [value]
         self.name = None
 
     @property
-    def properties(self):
-        return [self.value]
+    def value(self):
+        return self._params[0]
+    
+    def with_grads(self, grads):
+        self_copy = copy.copy(self)
+        self_copy._basegradients = grads
+        return self_copy
 
     def __repr__(self):
         return "Scalar({:.4f})".format(self.value)
@@ -272,24 +272,18 @@ def combine_gradients(carriers: ty.List[Scalar]):
 
 class Point(GradientCarrier):
     def __init__(self, x, y):
-        super().__init__()
-
-        x = Scalar(x)
-        y = Scalar(y)
-
-        inputs = {"_x": x, "_y": y}
-        local_grads = {"_x": [[1], [0]], "_y": [[0], [1]]}
-
-        self.x = x
-        self.y = y
-        self.gradients = combine_gradients(self.properties)
+        self._params = [Scalar(x), Scalar(y)]
 
     @property
-    def properties(self):
-        return [self.x, self.y]
+    def x(self):
+        return self._params[0]
+    
+    @property
+    def y(self):
+        return self._params[1]
 
     def as_numpy(self):
-        return np.reshape([prop.value for prop in self.properties], (-1, 1))
+        return np.reshape([prop.value for prop in self._params], (-1, 1))
 
     def __repr__(self):
         return "Pt({:.4f},{:.4f})".format(self.x, self.y)
@@ -534,18 +528,15 @@ class Line(GradientCarrier):
 
     # TODO: Replace by better representation with no singularities
     def __init__(self, m, b):
-        super().__init__()
-
-        m = Scalar(m)
-        b = Scalar(b)
-
-        self.m = m
-        self.b = b
-        self.gradients = combine_gradients(self.properties)
+        self._params = [Scalar(m), Scalar(b)]
 
     @property
-    def properties(self):
-        return [self.m, self.b]
+    def m(self):
+        return self._params[0]
+    
+    @property
+    def b(self):
+        return self._params[1]
 
     def __repr__(self):
         return f"Line(m={self.m:.4f}, b={self.b:.4f})"
