@@ -276,7 +276,7 @@ class Point(GradientCarrier):
 
         self.x = x
         self.y = y
-        self.gradients = combine_gradients([x, y])
+        self.gradients = combine_gradients(self.properties)
 
     @property
     def properties(self):
@@ -540,12 +540,9 @@ class Line(GradientCarrier):
         m = Scalar(m)
         b = Scalar(b)
 
-        inputs = {"m": m, "b": b}
-        local_grads = {"m": [[1], [0]], "b": [[0], [1]]}
-
-        self.m = m.value
-        self.b = b.value
-        self.gradients = update_grads(inputs, local_grads)
+        self.m = m
+        self.b = b
+        self.gradients = combine_gradients(self.properties)
 
     @property
     def properties(self):
