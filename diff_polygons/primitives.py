@@ -47,7 +47,7 @@ class GradientCarrier:
         returns: an instance of this particular GradientCarrier with the gradient set
         """
         self_copy = copy.copy(self)
-        assert self_copy.gradients == {}
+        # assert self_copy.gradients == {}
 
         self_copy.gradients = update_grads(inputs, local_grads)
         return self_copy
