@@ -169,6 +169,32 @@ class Scalar(GradientCarrier):
 
         return param
 
+## UTILS
+# TODO: Move to own file
+
+def sin(scal: Scalar) -> Scalar:
+    scal = Scalar(scal)
+
+    inputs = {"s": scal}
+    
+    grads = {}
+    grads["s"] = [[np.cos(scal.value)]]
+
+    val_out = np.sin(scal.value)
+
+    return Scalar(val_out).with_grads_from_previous(inputs, grads)
+
+def cos(scal: Scalar) -> Scalar:
+    scal = Scalar(scal)
+
+    inputs = {"s": scal}
+    
+    grads = {}
+    grads["s"] = [[-np.sin(scal.value)]]
+
+    val_out = np.cos(scal.value)
+
+    return Scalar(val_out).with_grads_from_previous(inputs, grads)
 
 def combine_gradients(carriers: ty.List[Scalar]):
     inputs: ty.List[str] = []
