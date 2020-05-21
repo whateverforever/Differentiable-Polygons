@@ -382,16 +382,9 @@ class Point(GradientCarrier):
 
     def norm(pt: Point):
         eps = 1e-13
+        l2_norm = (eps + pt.x ** 2 + pt.y ** 2) ** 0.5
 
-        l2_norm = np.sqrt(eps + pt.x ** 2 + pt.y ** 2)
-
-        grad_pt = [[pt.x / l2_norm, pt.y / l2_norm]]
-
-        inputs = {"pt": pt}
-        _grads = {}
-        _grads["pt"] = grad_pt
-
-        return Scalar(l2_norm).with_grads_from_previous(inputs, _grads)
+        return Scalar(l2_norm)
 
     def rotate(pt: Point, origin: Point, angle_rad: Scalar) -> Point:
         # TODO: Same for points, coercion
