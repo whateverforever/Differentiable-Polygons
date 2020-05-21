@@ -607,20 +607,7 @@ class Line(GradientCarrier):
         x = (b2 - b1) / (m1 - m2)
         y = m1 * x + b1
 
-        # dx_dline meaning [dx_dm, dx_db]
-        dx_dline1 = [[(b1 - b2) / (m1 - m2) ** 2, 1 / (-m1 + m2)]]
-        dx_dline2 = [[(-b1 + b2) / (m1 - m2) ** 2, 1 / (m1 - m2)]]
-
-        dy_dline1 = [[((b1 - b2) * m2) / (m1 - m2) ** 2, -(m2 / (m1 - m2))]]
-        dy_dline2 = [[((-b1 + b2) * m1) / (m1 - m2) ** 2, m1 / (m1 - m2)]]
-
-        inputs = {"line_1": line_1, "line_2": line_2}
-        local_grads = {
-            "line_1": np.vstack([dx_dline1, dy_dline1]),
-            "line_2": np.vstack([dx_dline2, dy_dline2]),
-        }
-
-        return Point(x, y).with_grads_from_previous(inputs, local_grads)
+        return Point(x,y)
 
     def plot(self, ax=None, lims=(-20, 20, 10), label=None):
         import matplotlib.pyplot as plt  # type: ignore

@@ -476,8 +476,8 @@ class TestLine:
 
         intersect = line1.intersect(line2)
 
-        assert np.isclose(intersect.x, 2.33333)
-        assert np.isclose(intersect.y, 3.33333)
+        assert np.isclose(intersect.x.value, 2.33333)
+        assert np.isclose(intersect.y.value, 3.33333)
 
         h = Param("h", 2.0)
         line_a = Line.make_from_points(Point(0, 0), Point(1, 1))
