@@ -2,4 +2,7 @@
 .pytest_cache
 .hypothesis
 .idea
+.coverage
+.ipynb_checkpoints
+.vscode
 __pycache__
