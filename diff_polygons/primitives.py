@@ -383,32 +383,10 @@ class Point(GradientCarrier):
 
         angle = angle_rad.value
 
-        x2 = (x1 - ox) * np.cos(angle) - (y1 - oy) * np.sin(angle) + ox
-        y2 = (x1 - ox) * np.sin(angle) + (y1 - oy) * np.cos(angle) + oy
+        x2 = (x1 - ox) * cos(angle_rad) - (y1 - oy) * sin(angle_rad) + ox
+        y2 = (x1 - ox) * sin(angle_rad) + (y1 - oy) * cos(angle_rad) + oy
 
-        d_dpt = np.array(
-            [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]
-        )
-        d_dorigin = [
-            [-np.cos(angle) + 1, np.sin(angle)],
-            [-np.sin(angle), -np.cos(angle) + 1],
-        ]
-        d_dangle = [
-            [(oy - y1) * np.cos(angle) + (ox - x1) * np.sin(angle)],
-            [(-ox + x1) * np.cos(angle) + (oy - y1) * np.sin(angle)],
-        ]
-
-        inputs = {"pt": pt, "origin": origin, "angle": angle_rad}
-
-        _grads = {}
-        _grads["pt"] = d_dpt
-        _grads["origin"] = d_dorigin
-        _grads["angle"] = d_dangle
-
-        pt2 = Point(x2, y2).with_grads_from_previous(inputs, _grads)
-
-        return pt2
-
+        return Point(x2, y2)
 
 Vector = Point
 Param = Scalar.Param

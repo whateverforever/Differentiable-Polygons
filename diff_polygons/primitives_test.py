@@ -274,8 +274,8 @@ class TestPoint:
         pt2 = pt1.rotate(origin, angle)
 
         assert pt2 is not pt1
-        assert np.isclose(np.sqrt(2), pt2.x)
-        assert np.isclose(np.sqrt(2), pt2.y)
+        assert np.isclose(np.sqrt(2), pt2.x.value)
+        assert np.isclose(np.sqrt(2), pt2.y.value)
 
     @given(
         reals2(min_value=-100, max_value=100),
