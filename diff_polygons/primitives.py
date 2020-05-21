@@ -191,6 +191,25 @@ class Scalar(GradientCarrier):
 ## UTILS
 # TODO: Move to own file
 
+def tan(angle: Scalar) -> Scalar:
+    angle = Scalar(angle)
+
+    inputs = {"angle": angle}
+    grads = {"angle": [[1/(np.cos(angle.value)**2)]]}
+
+    val_out = np.tan(angle.value)
+
+    return Scalar(val_out).with_grads_from_previous(inputs, grads)
+
+def arctan(angle: Scalar) -> Scalar:
+    angle = Scalar(angle)
+
+    inputs = {"angle": angle}
+    grads = {"angle": [[1/(angle.value**2 + 1)]]}
+
+    val_out = np.arctan(angle.value)
+
+    return Scalar(val_out).with_grads_from_previous(inputs, grads)
 
 def sin(scal: Scalar) -> Scalar:
     scal = Scalar(scal)
