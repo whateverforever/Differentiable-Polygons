@@ -73,7 +73,7 @@ class Scalar(GradientCarrier):
     def __repr__(self):
         return "Scalar({:.4f})".format(self.value)
 
-    def __eq__(self: Scalar, other: Union[Scalar, float, int]):
+    def __eq__(self: Scalar, other: Union[Scalar, float, int]) -> bool:
         if not isinstance(other, Scalar):
             return np.isclose(self.value, other)
 
@@ -86,7 +86,7 @@ class Scalar(GradientCarrier):
                 break
 
         return coords_equal and grads_equal
-    
+
     def __lt__(scal1: Scalar, other: Union[Scalar, float, int]) -> bool:
         if not isinstance(other, Scalar):
             return scal1.value < other
@@ -94,9 +94,27 @@ class Scalar(GradientCarrier):
         # TODO: Is there a meaningful less than comparison amongst gradients?
         coords_equal = scal1.value < other.value
         return coords_equal
-    
+
     def __le__(scal1: Scalar, other: Union[Scalar, float, int]) -> bool:
         return (scal1 < other) or (scal1 == other)
+
+    # TODO: Add gt, ge
+
+    def __rpow__(power: Scalar, base:Any) -> bool:
+        return Scalar(base) ** power
+
+    def __pow__(base: Scalar, power) -> bool:
+        power = Scalar(power)
+
+        val_new = base.value ** power.value
+
+        inputs = {"base": base, "power": power}
+        grads = {
+            "base": [[power.value * base.value ** (power.value - 1)]],
+            "power": [[val_new * np.log(base.value)]],
+        }
+
+        return Scalar(val_new).with_grads_from_previous(inputs, grads)
 
     def __radd__(scal1: Scalar, scal2: Any) -> Scalar:
         return scal1 + scal2
@@ -169,14 +187,16 @@ class Scalar(GradientCarrier):
 
         return param
 
+
 ## UTILS
 # TODO: Move to own file
+
 
 def sin(scal: Scalar) -> Scalar:
     scal = Scalar(scal)
 
     inputs = {"s": scal}
-    
+
     grads = {}
     grads["s"] = [[np.cos(scal.value)]]
 
@@ -184,17 +204,19 @@ def sin(scal: Scalar) -> Scalar:
 
     return Scalar(val_out).with_grads_from_previous(inputs, grads)
 
+
 def cos(scal: Scalar) -> Scalar:
     scal = Scalar(scal)
 
     inputs = {"s": scal}
-    
+
     grads = {}
     grads["s"] = [[-np.sin(scal.value)]]
 
     val_out = np.cos(scal.value)
 
     return Scalar(val_out).with_grads_from_previous(inputs, grads)
+
 
 def combine_gradients(carriers: ty.List[Scalar]):
     inputs: ty.List[str] = []
@@ -212,15 +234,16 @@ def combine_gradients(carriers: ty.List[Scalar]):
             # grads {'x': array([[9.23958299e-10]]), 's': array([[-0.05108443]])}
             if not input_name in carrier.grads:
                 continue
-            
+
             dout_dinput = carrier.grads[input_name][0][0]
             grads[input_name][iout] = dout_dinput
 
     # turn into column vector
     for gradname, gradvals in grads.items():
-        grads[gradname] = np.reshape(gradvals, [-1,1])
+        grads[gradname] = np.reshape(gradvals, [-1, 1])
 
     return grads
+
 
 class Point(GradientCarrier):
     def __init__(self, x, y):
@@ -241,7 +264,7 @@ class Point(GradientCarrier):
         return [self.x, self.y]
 
     def as_numpy(self):
-        return np.reshape([prop.value for prop in self.properties] ,(-1,1))
+        return np.reshape([prop.value for prop in self.properties], (-1, 1))
 
     def __repr__(self):
         return "Pt({:.4f},{:.4f})".format(self.x, self.y)
@@ -387,6 +410,7 @@ class Point(GradientCarrier):
         y2 = (x1 - ox) * sin(angle_rad) + (y1 - oy) * cos(angle_rad) + oy
 
         return Point(x2, y2)
+
 
 Vector = Point
 Param = Scalar.Param

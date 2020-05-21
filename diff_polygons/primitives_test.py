@@ -97,6 +97,22 @@ class TestScalar:
         assert (s1 + real2).value == real1 + real2
         # float - Scalar
         assert (real1 + s2).value == real1 + real2
+    
+    @given(reals2(min_value=1,max_value=5), reals2(min_value=2, max_value=5))
+    def test_pow(self, base, power):
+        p_base = Scalar.Param("base", base)
+        p_power = Scalar.Param("power", power)
+
+        f = lambda x: x[0] ** x[1]
+
+        # Scalar - Scalar
+        assert f([p_base, p_power]).value == base ** power
+        check_all_grads(f, [p_base, p_power])
+
+        # Scalar - float
+        assert (p_base ** power).value == base ** power
+        # float - Scalar
+        assert (base ** p_power).value == base ** power
 
     @given(
         reals2(min_value=-1000, max_value=1000), reals2(min_value=-1000, max_value=1000)
