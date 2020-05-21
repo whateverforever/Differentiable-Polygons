@@ -183,8 +183,8 @@ class TestIntegration:
         pt4 = pt3.translate(Vector(0, 0.5 * l))
         pt5 = pt4.translate(Vector(4 * l2, 0))
 
-        assert np.allclose(pt5.x, l.value * np.cos(theta.value) + 4 * l2.value)
-        assert np.allclose(pt5.y, l.value * np.sin(theta.value) + 0.5 * l.value)
+        assert np.allclose(pt5.x.value, l.value * np.cos(theta.value) + 4 * l2.value)
+        assert np.allclose(pt5.y.value, l.value * np.sin(theta.value) + 0.5 * l.value)
 
         assert "l2" in pt5.grads
         assert np.allclose(
