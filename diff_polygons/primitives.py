@@ -108,10 +108,16 @@ class Scalar(GradientCarrier):
 
         val_new = base.value ** power.value
 
+        # The log is very brittle. But it's evaluation is actually only needed when
+        # the exponent contains gradients, hence we don't evaluate it if no need be
+        d_dpower = -1
+        if power.grads != {}:
+            d_dpower = val_new * np.log(base.value)
+
         inputs = {"base": base, "power": power}
         grads = {
             "base": [[power.value * base.value ** (power.value - 1)]],
-            "power": [[val_new * np.log(base.value)]],
+            "power": [[d_dpower]],
         }
 
         return Scalar(val_new).with_grads_from_previous(inputs, grads)
