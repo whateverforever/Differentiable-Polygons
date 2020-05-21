@@ -528,15 +528,19 @@ class TestLine:
 
 
 def central_diff(fun, x, epsilon):
-    return (fun(x + epsilon) - fun(x - epsilon)) / (2 * epsilon)
+    res = (fun(x + epsilon) - fun(x - epsilon)) / (2 * epsilon)
+
+    if isinstance(res, Scalar):
+        return res.value
+
+    return res
 
 
 def check_grad_c(fun, gradfun, x, epsilon):
-    diff = central_diff(fun, x, epsilon)
-
+    grad_numerical = central_diff(fun, x, epsilon)
     grad_analytic = gradfun(x)
 
-    return abs(grad_analytic - diff)
+    return abs(grad_analytic - grad_numerical)
 
 
 def check_all_grads(fun, x: List[Param], tol=1e-5, eps=1e-6):

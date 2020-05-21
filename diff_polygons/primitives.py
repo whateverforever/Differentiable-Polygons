@@ -76,7 +76,7 @@ class Scalar(GradientCarrier):
     def __eq__(self: Scalar, other: Union[Scalar, float, int]):
         if not isinstance(other, Scalar):
             return np.isclose(self.value, other)
-        
+
         coords_equal = self.value == other.value
         grads_equal = True
 
@@ -206,9 +206,9 @@ class Point(GradientCarrier):
         inputs = {"_x": x, "_y": y}
         local_grads = {"_x": [[1], [0]], "_y": [[0], [1]]}
 
-        self.x = x.value
-        self.y = y.value
-        self.gradients = update_grads(inputs, local_grads)
+        self.x = x
+        self.y = y
+        self.gradients = combine_gradients([x, y])
 
     @property
     def properties(self):
@@ -222,16 +222,10 @@ class Point(GradientCarrier):
 
     def __truediv__(pt: Point, s: ty.Union[Scalar, Number]) -> Point:
         if isinstance(s, Scalar):
-            new_x = pt.x / s.value
-            new_y = pt.y / s.value
+            new_x = pt.x / s
+            new_y = pt.y / s
 
-            inputs = {"pt": pt, "s": s}
-            grads = {
-                "pt": [[1 / s.value, 0], [0, 1 / s.value]],
-                "s": [[-pt.x / (s.value ** 2)], [-pt.y / (s.value ** 2)]],
-            }
-
-            return Point(new_x, new_y).with_grads_from_previous(inputs, grads)
+            return Point(new_x, new_y)
 
         raise NotImplementedError("__truediv__ not yet impl for normal numbers")
 
