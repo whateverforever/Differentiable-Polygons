@@ -268,16 +268,10 @@ class Point(GradientCarrier):
 
     def __mul__(pt: Point, other: ty.Union[Point, Scalar, Number]) -> Point:
         if isinstance(other, Scalar):
-            new_x = pt.x * other.value
-            new_y = pt.y * other.value
+            new_x = pt.x * other
+            new_y = pt.y * other
 
-            inputs = {"pt": pt, "scalar": other}
-            grads = {
-                "pt": [[other.value, 0], [0, other.value]],
-                "scalar": [[pt.x], [pt.y]],
-            }
-
-            return Point(new_x, new_y).with_grads_from_previous(inputs, grads)
+            return Point(new_x, new_y)
 
         raise NotImplementedError(
             "__mul__ not yet implemented for {}".format(type(other))
