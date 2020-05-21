@@ -86,6 +86,17 @@ class Scalar(GradientCarrier):
                 break
 
         return coords_equal and grads_equal
+    
+    def __lt__(scal1: Scalar, other: Union[Scalar, float, int]) -> bool:
+        if not isinstance(other, Scalar):
+            return scal1.value < other
+
+        # TODO: Is there a meaningful less than comparison amongst gradients?
+        coords_equal = scal1.value < other.value
+        return coords_equal
+    
+    def __le__(scal1: Scalar, other: Union[Scalar, float, int]) -> bool:
+        return (scal1 < other) or (scal1 == other)
 
     def __radd__(scal1: Scalar, scal2: Any) -> Scalar:
         return scal1 + scal2
