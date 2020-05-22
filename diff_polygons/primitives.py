@@ -412,8 +412,9 @@ def update_grads(
     inputs: ty.Dict[str, GradientCarrier],
     local_grads: ty.Dict[str, ty.Union[ty.List[Number], np.ndarray]],
 ):
+    inputs_items = inputs.items()
     incoming_parameters = []
-    for input_name, input_obj in inputs.items():
+    for input_name, input_obj in inputs_items:
         incoming_parameters.extend(
             [
                 grad_name
@@ -421,23 +422,14 @@ def update_grads(
                 if grad_name not in incoming_parameters
             ]
         )
-
-    # Parameters that previous operations don't know anything about
-    # I.e. maybe we did translations on `l` before, and now a rotation
-    # on new parameter `theta`
-    local_params = list(local_grads.keys())
-    input_params = inputs.keys()
-    own_parameters = [
-        param
-        for param in local_params
-        if param not in input_params and param not in incoming_parameters
-    ]
+    
+    some_grad_name = list(local_grads.keys())[0]
+    some_grad = local_grads[some_grad_name]
+    grad_shape = [len(some_grad), 1]
 
     out_grads = {}
-    inputs_items = inputs.items()
-    shapeA = len(local_grads[local_params[0]])
-    for param in incoming_parameters + own_parameters:
-        grads = np.zeros((shapeA, 1))
+    for param in incoming_parameters:
+        grads = np.zeros(grad_shape)
 
         # If we have inputs that depended on parameters
         for input_name, input_obj in inputs_items:
