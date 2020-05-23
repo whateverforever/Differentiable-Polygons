@@ -272,16 +272,17 @@ class TestPoint:
         assert np.allclose(f([0, 2]).as_numpy(), [[3], [1]])
         check_all_grads(f, [m, b])
 
-    def test_parameter_translate(self):
-        l = Scalar.Param("l", 3.0)
-
+    def test_translate(self):
         pt = Point(0, 0)
-        pt2 = pt.translate(Point(l, 0))
+        f = lambda x: pt.translate(Point(x[0], 0))
+
+        l = Scalar.Param("l", 3.0)
+        check_all_grads(f, [l])
+
+        pt2 = f([l])
 
         assert pt is not pt2
         assert pt2.x == l.value
-        assert np.shape(pt2.grads["l"]) == (2, 1)
-        assert np.allclose(pt2.grads["l"], [[1], [0]])
 
     def test_rotation(self):
         pt1 = Point(2, 0)
