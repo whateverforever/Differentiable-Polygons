@@ -88,11 +88,11 @@ class TestScalar:
         s2 = Scalar.Param("s2", real2)
 
         f = lambda x: x[0] + x[1]
-
+        
+        check_all_grads(f, [s1, s2])
+        
         # Scalar - Scalar
         assert f([s1, s2]).value == real1 + real2
-        check_all_grads(f, [s1, s2])
-
         # Scalar - float
         assert (s1 + real2).value == real1 + real2
         # float - Scalar
@@ -105,11 +105,11 @@ class TestScalar:
 
         f = lambda x: x[0] ** x[1]
 
-        # Scalar - Scalar
-        assert f([p_base, p_power]).value == base ** power
         # Higher tolerance because powers are so sensitive
         check_all_grads(f, [p_base, p_power],  tol=1e-3)
 
+        # Scalar - Scalar
+        assert f([p_base, p_power]).value == base ** power
         # Scalar - float
         assert (p_base ** power).value == base ** power
         # float - Scalar
@@ -125,10 +125,10 @@ class TestScalar:
         f = lambda x: x[0] - x[1]
         s3 = f([s1, s2])
 
-        # Scalar - Scalar
-        assert s3.value == real1 - real2
         check_all_grads(f, [s1, s2])
 
+        # Scalar - Scalar
+        assert s3.value == real1 - real2
         # Scalar - float
         assert (s1 - real2).value == real1 - real2
         # float - Scalar
@@ -142,10 +142,10 @@ class TestScalar:
         f = lambda x: x[0] * x[1]
         s3 = f([s1, s2])
 
-        # Scalar - Scalar
-        assert s3.value == real1 * real2
         check_all_grads(f, [s1, s2])
 
+        # Scalar - Scalar
+        assert s3.value == real1 * real2
         # Scalar - float
         assert (s1 * real2).value == real1 * real2
         # float - Scalar

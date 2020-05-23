@@ -430,8 +430,6 @@ def update_grads(
     out_grads = {}
     for param in incoming_parameters:
         grads = np.zeros(grad_shape)
-
-        # If we have inputs that depended on parameters
         for input_name, input_obj in inputs_items:
             # If one of the inputs doesn't depend on the parameter, we simply
             # ignore it. No gradient information in there!
