@@ -321,15 +321,33 @@ class TestPoint:
         angle = Param("angle", np.radians(angle))
         check_all_grads(f, [x1, y1, x2, y2, angle])
 
-    @given(reals, reals, reals, reals)
+    @given(
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
+    )
     def test_subtraction(self, x1, y1, x2, y2):
-        pt1 = Point(x1, y1)
-        pt2 = Point(x2, y2)
+        def f(x):
+            x1, y1, x2, y2 = x
 
-        diff_vec = pt1 - pt2
+            pt1 = Point(x1, y1)
+            pt2 = Point(x2, y2)
+
+            return pt1 - pt2
+        
+        x1 = Param("x1", x1)
+        y1 = Param("y1", y1)
+
+        x2 = Param("x2", x2)
+        y2 = Param("y2", y2)
+
+        diff_vec = f([x1,y1,x2,y2])
 
         assert diff_vec.x == x1 - x2
         assert diff_vec.y == y1 - y2
+
+        check_all_grads(f, [x1, y1, x2, y2])
 
     @given(
         reals,
