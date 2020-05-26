@@ -436,6 +436,42 @@ class TestLine2:
         assert np.allclose(intersect.as_numpy(), [[2], [2]])
         assert np.allclose(intersect.as_numpy(), intersect_2.as_numpy())
 
+    @given(
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
+    )
+    def test_intersection_grad(self, x1, y1, dx, dy):
+        if np.isclose(dx**2 + dy**2, 0):
+            return
+        
+        dir_ = Vector(dx, dy)
+        dir_length = dir_.norm()
+
+        dir_ /= dir_length
+        dx = dir_.x
+        dy = dir_.y
+
+        # check if colinear with line against we check
+        if abs(np.dot([dx.value, dy.value], [np.sqrt(0.5), np.sqrt(0.5)])) > 0.8:
+            return
+
+        def f(x) -> Point:
+            ox, oy, dx, dy = x
+
+            line_a = Line2(ox, oy, dx, dy)
+            line_b = Line2(0, 0, np.sqrt(0.5), np.sqrt(0.5))
+            intersect2 = line_a.intersect(line_b)
+
+            return intersect2
+
+        x1 = Param("x1", x1)
+        y1 = Param("y1", y1)
+        dx = Param("dx", dx)
+        dy = Param("dy", dy)
+
+        check_all_grads(f, [x1, y1, dx, dy])
 
 class TestLine:
     def test_from_points(self):
