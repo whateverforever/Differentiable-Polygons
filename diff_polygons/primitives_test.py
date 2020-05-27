@@ -76,7 +76,7 @@ class TestScalar:
         assert a == a
         assert a == b
         assert b == a
-        
+
         assert a == real1
         assert real1 == a
 
@@ -88,17 +88,17 @@ class TestScalar:
         s2 = Scalar.Param("s2", real2)
 
         f = lambda x: x[0] + x[1]
-        
+
         check_all_grads(f, [s1, s2])
-        
+
         # Scalar - Scalar
         assert f([s1, s2]).value == real1 + real2
         # Scalar - float
         assert (s1 + real2).value == real1 + real2
         # float - Scalar
         assert (real1 + s2).value == real1 + real2
-    
-    @given(reals2(min_value=1,max_value=10), reals2(min_value=2, max_value=5))
+
+    @given(reals2(min_value=1, max_value=10), reals2(min_value=2, max_value=5))
     def test_pow(self, base, power):
         p_base = Scalar.Param("base", base)
         p_power = Scalar.Param("power", power)
@@ -106,7 +106,7 @@ class TestScalar:
         f = lambda x: x[0] ** x[1]
 
         # Higher tolerance because powers are so sensitive
-        check_all_grads(f, [p_base, p_power],  tol=1e-3)
+        check_all_grads(f, [p_base, p_power], tol=1e-3)
 
         # Scalar - Scalar
         assert f([p_base, p_power]).value == base ** power
@@ -335,14 +335,14 @@ class TestPoint:
             pt2 = Point(x2, y2)
 
             return pt1 - pt2
-        
+
         x1 = Param("x1", x1)
         y1 = Param("y1", y1)
 
         x2 = Param("x2", x2)
         y2 = Param("y2", y2)
 
-        diff_vec = f([x1,y1,x2,y2])
+        diff_vec = f([x1, y1, x2, y2])
 
         assert diff_vec.x == x1 - x2
         assert diff_vec.y == y1 - y2
@@ -472,6 +472,7 @@ class TestLine2:
         dy = Param("dy", dy)
 
         check_all_grads(f, [x1, y1, dx, dy])
+
 
 class TestLine:
     def test_from_points(self):
