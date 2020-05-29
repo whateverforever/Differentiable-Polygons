@@ -454,6 +454,7 @@ class Line2(GradientCarrier):
         ox = Scalar(ox)
         oy = Scalar(oy)
 
+        # TODO: Normalize this and warn if it isn't
         dx = Scalar(dx)
         dy = Scalar(dy)
 

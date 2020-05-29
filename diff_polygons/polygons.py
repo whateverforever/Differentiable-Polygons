@@ -11,9 +11,6 @@ import matplotlib.patches as patches  # type:ignore
 
 from .primitives import Line, Vector, Point, Scalar, Param, GradientCarrier
 
-
-# TODO: Opening fails, since triangle coords are not adapted
-
 try:
     from martinez.polygon import Polygon as MPolygon  # type:ignore
     from martinez.contour import Contour as MContour  # type:ignore
