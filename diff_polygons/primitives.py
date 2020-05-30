@@ -3,10 +3,13 @@ from __future__ import annotations
 import copy
 import typing as ty
 import warnings
+from math import isclose, sqrt
+
 import numpy as np  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
 
 from numbers import Number
+
 
 def update_grads(
     inputs: ty.Dict[str, GradientCarrier],
@@ -22,7 +25,7 @@ def update_grads(
                 if grad_name not in incoming_parameters
             ]
         )
-    
+
     some_grad_name = list(local_grads.keys())[0]
     some_grad = local_grads[some_grad_name]
     grad_shape = [len(some_grad), 1]
@@ -42,6 +45,7 @@ def update_grads(
         out_grads[param] = grads
     return out_grads
 
+
 # TODO: Split this? Make only scalar GradientCarrier and Point, Line, etc.
 # are somehow groups of "gradiented" scalars?
 class GradientCarrier:
@@ -51,20 +55,20 @@ class GradientCarrier:
             return self._basegradients
 
         return combine_gradients(self._params)
-    
+
     @gradients.setter
     def gradients(self, new_grads):
         if isinstance(self, Scalar):
             self._basegradients = new_grads
             return
-        
+
         # For combined Carriers like Line or Point a gradient update
         # means updating its component Scalar Parameters
         for iparam, param in enumerate(self._params):
             scalar_grads = {}
             for grad_name, grad_values in new_grads.items():
                 scalar_grads[grad_name] = [grad_values[iparam]]
-            
+
             self._params[iparam].gradients = scalar_grads
 
     @property
@@ -107,7 +111,7 @@ class Scalar(GradientCarrier):
     @property
     def value(self):
         return self._params[0]
-    
+
     def with_grads(self, grads):
         self_copy = copy.copy(self)
         self_copy._basegradients = grads
@@ -133,7 +137,7 @@ class Scalar(GradientCarrier):
 
     # TODO: Add gt, ge
 
-    def __rpow__(power: Scalar, base:Any) -> bool:
+    def __rpow__(power: Scalar, base: Any) -> bool:
         return Scalar(base) ** power
 
     def __pow__(base: Scalar, power) -> bool:
@@ -230,25 +234,28 @@ class Scalar(GradientCarrier):
 ## UTILS
 # TODO: Move to own file
 
+
 def tan(angle: Scalar) -> Scalar:
     angle = Scalar(angle)
 
     inputs = {"angle": angle}
-    grads = {"angle": [[1/(np.cos(angle.value)**2)]]}
+    grads = {"angle": [[1 / (np.cos(angle.value) ** 2)]]}
 
     val_out = np.tan(angle.value)
 
     return Scalar(val_out).with_grads_from_previous(inputs, grads)
 
+
 def arctan(angle: Scalar) -> Scalar:
     angle = Scalar(angle)
 
     inputs = {"angle": angle}
-    grads = {"angle": [[1/(angle.value**2 + 1)]]}
+    grads = {"angle": [[1 / (angle.value ** 2 + 1)]]}
 
     val_out = np.arctan(angle.value)
 
     return Scalar(val_out).with_grads_from_previous(inputs, grads)
+
 
 def sin(scal: Scalar) -> Scalar:
     scal = Scalar(scal)
@@ -310,7 +317,7 @@ class Point(GradientCarrier):
     @property
     def x(self):
         return self._params[0]
-    
+
     @property
     def y(self):
         return self._params[1]
@@ -330,7 +337,9 @@ class Point(GradientCarrier):
 
     def __eq__(pt1: Point, pt2: ty.Any) -> bool:
         if not isinstance(pt2, Point):
-            raise TypeError("Can only compare Point to Point, not {}".format(pt2.__class__))
+            raise TypeError(
+                "Can only compare Point to Point, not {}".format(pt2.__class__)
+            )
 
         return pt1.same_as(pt2)
 
@@ -343,9 +352,7 @@ class Point(GradientCarrier):
 
             return Point(new_x, new_y)
 
-        raise NotImplementedError(
-            "__mul__ not implemented for {}".format(type(other))
-        )
+        raise NotImplementedError("__mul__ not implemented for {}".format(type(other)))
 
     def __sub__(pt1: Point, pt2: Point) -> Point:
         # reuse __add__ and __neg__
@@ -387,7 +394,7 @@ class Point(GradientCarrier):
         u = ((1 - m ** 2) * x + 2 * m * y - 2 * m * b) / (m ** 2 + 1)
         v = ((m ** 2 - 1) * y + 2 * m * x + 2 * b) / (m ** 2 + 1)
 
-        return Point(u,v)
+        return Point(u, v)
 
     def translate(pt: Point, vec: Point) -> Point:
         x2 = pt.x + vec.x
@@ -440,9 +447,19 @@ class Line2(GradientCarrier):
         ox = Scalar(ox)
         oy = Scalar(oy)
 
-        # TODO: Normalize this and warn if it isn't
         dx = Scalar(dx)
         dy = Scalar(dy)
+
+        length = dx.value ** 2 + dy.value ** 2
+        if not isclose(length, 1.0, rel_tol=1e-3):
+            warnings.warn(
+                "Direction vector {:.3f},{:.3f} doesn't have unit length."
+                "Fixed its size for you. Please do yourself next time.".format(
+                    dx.value, dy.value
+                )
+            )
+            dx /= length
+            dy /= length
 
         self._params = [ox, oy, dx, dy]
 
@@ -510,7 +527,7 @@ class Line(GradientCarrier):
     @property
     def m(self):
         return self._params[0]
-    
+
     @property
     def b(self):
         return self._params[1]
@@ -550,7 +567,7 @@ class Line(GradientCarrier):
 
     def rotate_ccw(line1: Line, angle_rad: Scalar, pivot: Point = None) -> Line:
         angle_rad = Scalar(angle_rad)
-        
+
         if pivot is None:
             pivot = Point(0, 0)
 
@@ -574,7 +591,7 @@ class Line(GradientCarrier):
         x = (b2 - b1) / (m1 - m2)
         y = m1 * x + b1
 
-        return Point(x,y)
+        return Point(x, y)
 
     def plot(self, ax=None, lims=(-20, 20, 10), label=None):
         import matplotlib.pyplot as plt  # type: ignore
