@@ -8,6 +8,39 @@ import matplotlib.pyplot as plt  # type: ignore
 
 from numbers import Number
 
+def update_grads(
+    inputs: ty.Dict[str, GradientCarrier],
+    local_grads: ty.Dict[str, ty.Union[ty.List[Number], np.ndarray]],
+):
+    inputs_items = inputs.items()
+    incoming_parameters = []
+    for input_name, input_obj in inputs_items:
+        incoming_parameters.extend(
+            [
+                grad_name
+                for grad_name in input_obj.gradients.keys()
+                if grad_name not in incoming_parameters
+            ]
+        )
+    
+    some_grad_name = list(local_grads.keys())[0]
+    some_grad = local_grads[some_grad_name]
+    grad_shape = [len(some_grad), 1]
+
+    out_grads = {}
+    for param in incoming_parameters:
+        grads = np.zeros(grad_shape)
+        for input_name, input_obj in inputs_items:
+            # If one of the inputs doesn't depend on the parameter, we simply
+            # ignore it. No gradient information in there!
+            if param in input_obj.gradients:
+                dself_dinput = local_grads[input_name]
+                dinput_dparam = input_obj.gradients[param]
+
+                grads += np.matmul(dself_dinput, dinput_dparam)
+
+        out_grads[param] = grads
+    return out_grads
 
 # TODO: Split this? Make only scalar GradientCarrier and Point, Line, etc.
 # are somehow groups of "gradiented" scalars?
@@ -406,41 +439,6 @@ class Point(GradientCarrier):
 
 Vector = Point
 Param = Scalar.Param
-
-
-def update_grads(
-    inputs: ty.Dict[str, GradientCarrier],
-    local_grads: ty.Dict[str, ty.Union[ty.List[Number], np.ndarray]],
-):
-    inputs_items = inputs.items()
-    incoming_parameters = []
-    for input_name, input_obj in inputs_items:
-        incoming_parameters.extend(
-            [
-                grad_name
-                for grad_name in input_obj.gradients.keys()
-                if grad_name not in incoming_parameters
-            ]
-        )
-    
-    some_grad_name = list(local_grads.keys())[0]
-    some_grad = local_grads[some_grad_name]
-    grad_shape = [len(some_grad), 1]
-
-    out_grads = {}
-    for param in incoming_parameters:
-        grads = np.zeros(grad_shape)
-        for input_name, input_obj in inputs_items:
-            # If one of the inputs doesn't depend on the parameter, we simply
-            # ignore it. No gradient information in there!
-            if param in input_obj.gradients:
-                dself_dinput = local_grads[input_name]
-                dinput_dparam = input_obj.gradients[param]
-
-                grads += np.matmul(dself_dinput, dinput_dparam)
-
-        out_grads[param] = grads
-    return out_grads
 
 
 class Line2(GradientCarrier):
