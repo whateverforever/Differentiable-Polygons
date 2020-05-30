@@ -120,15 +120,7 @@ class Scalar(GradientCarrier):
         if not isinstance(other, Scalar):
             return np.isclose(self.value, other)
 
-        coords_equal = self.value == other.value
-        grads_equal = True
-
-        for key, val in self.grads.items():
-            if key not in other.grads or not np.allclose(val, other.grads[key]):
-                grads_equal = False
-                break
-
-        return coords_equal and grads_equal
+        return self.value == other.value
 
     def __lt__(scal1: Scalar, other: Union[Scalar, float, int]) -> bool:
         if not isinstance(other, Scalar):
