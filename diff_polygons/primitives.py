@@ -332,13 +332,12 @@ class Point(GradientCarrier):
         return "Pt({:.4f},{:.4f})".format(self.x.value, self.y.value)
 
     def __truediv__(pt: Point, s: ty.Union[Scalar, Number]) -> Point:
-        if isinstance(s, Scalar):
-            new_x = pt.x / s
-            new_y = pt.y / s
+        s = Scalar(s)
+        new_x = pt.x / s
+        new_y = pt.y / s
 
-            return Point(new_x, new_y)
+        return Point(new_x, new_y)
 
-        raise NotImplementedError("__truediv__ not yet impl for normal numbers")
 
     def __eq__(pt1: Point, pt2: Point) -> bool:
         coords_equal = pt1.same_as(pt2)
