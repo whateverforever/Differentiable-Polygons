@@ -338,17 +338,11 @@ class Point(GradientCarrier):
 
         return Point(new_x, new_y)
 
+    def __eq__(pt1: Point, pt2: ty.Any) -> bool:
+        if not isinstance(pt2, Point):
+            raise TypeError("Can only compare Point to Point, not {}".format(pt2.__class__))
 
-    def __eq__(pt1: Point, pt2: Point) -> bool:
-        coords_equal = pt1.same_as(pt2)
-        grads_equal = True
-
-        for key, val in pt1.grads.items():
-            if key not in pt2.grads or not np.allclose(val, pt2.grads[key]):
-                grads_equal = False
-                break
-
-        return coords_equal and grads_equal
+        return pt1.same_as(pt2)
 
     def __mul__(pt: Point, other: ty.Union[Point, Scalar, Number]) -> Point:
         if isinstance(other, Scalar):
