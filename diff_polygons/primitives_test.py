@@ -391,6 +391,16 @@ class TestPoint:
         assert (pt1 + pt2).y == (y1 + y2).value
         assert pt1 + pt2 == pt2 + pt1
 
+        def f(x):
+            x1, y1, x2, y2 = x
+            pt1 = Point(x1, y1)
+            pt2 = Point(x2, y2)
+
+            return pt1 + pt2
+        
+        check_all_grads(f, [x1, y1, x2, y2])
+
+
     @given(reals, reals, reals)
     def test_mul(self, x, y, scalar):
         xx = Param("xx", x)
