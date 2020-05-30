@@ -56,6 +56,16 @@ class GradientCarrier:
     def gradients(self, new_grads):
         if isinstance(self, Scalar):
             self._basegradients = new_grads
+            return
+        
+        # For combined Carriers like Line or Point a gradient update
+        # means updating its component Scalar Parameters
+        for iparam, param in enumerate(self._params):
+            scalar_grads = {}
+            for grad_name, grad_values in new_grads.items():
+                scalar_grads[grad_name] = [grad_values[iparam]]
+            
+            self._params[iparam].gradients = scalar_grads
 
     @property
     def grads(self):
