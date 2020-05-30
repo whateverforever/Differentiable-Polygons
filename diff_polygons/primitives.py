@@ -126,9 +126,7 @@ class Scalar(GradientCarrier):
         if not isinstance(other, Scalar):
             return scal1.value < other
 
-        # TODO: Is there a meaningful less than comparison amongst gradients?
-        coords_equal = scal1.value < other.value
-        return coords_equal
+        return scal1.value < other.value
 
     def __le__(scal1: Scalar, other: Union[Scalar, float, int]) -> bool:
         return (scal1 < other) or (scal1 == other)
@@ -350,15 +348,8 @@ class Point(GradientCarrier):
         )
 
     def __sub__(pt1: Point, pt2: Point) -> Point:
-        x3 = pt1.x - pt2.x
-        y3 = pt1.y - pt2.y
-
-        inputs = {"pt1": pt1, "pt2": pt2}
-        local_grads = {}
-        local_grads["pt1"] = [[1, 0], [0, 1]]
-        local_grads["pt2"] = [[-1, 0], [0, -1]]
-
-        return Point(x3, y3).with_grads_from_previous(inputs, local_grads)
+        # reuse __add__ and __neg__
+        return pt1 + -pt2
 
     def __add__(pt1: Point, pt2: Point) -> Point:
         x3 = pt1.x.value + pt2.x.value

@@ -2,7 +2,7 @@
 
 # Definition of Done
 
-- [ ] Point contains all important methods
+- [x] Point contains all important methods
 - [ ] Line has been completely replaced by Line2
 - [ ] Line contains all important methods
 - [ ] Add tests for all methods of polygons
