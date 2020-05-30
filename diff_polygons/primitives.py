@@ -364,8 +364,8 @@ class Point(GradientCarrier):
         return Point(x3, y3).with_grads_from_previous(inputs, local_grads)
 
     def __add__(pt1: Point, pt2: Point) -> Point:
-        x3 = pt1.x + pt2.x
-        y3 = pt1.y + pt2.y
+        x3 = pt1.x.value + pt2.x.value
+        y3 = pt1.y.value + pt2.y.value
 
         inputs = {"pt1": pt1, "pt2": pt2}
         local_grads = {}
