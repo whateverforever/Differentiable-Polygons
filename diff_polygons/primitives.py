@@ -9,28 +9,24 @@ import matplotlib.pyplot as plt  # type: ignore
 from numbers import Number
 
 
+# TODO: Split this? Make only scalar GradientCarrier and Point, Line, etc.
+# are somehow groups of "gradiented" scalars?
 class GradientCarrier:
-    def __init__(self):
-        self.gradients = {}
+    @property
+    def gradients(self):
+        if isinstance(self, Scalar):
+            return self._basegradients
+
+        return combine_gradients(self._params)
+    
+    @gradients.setter
+    def gradients(self, new_grads):
+        if isinstance(self, Scalar):
+            self._basegradients = new_grads
 
     @property
     def grads(self):
         return copy.copy(self.gradients)
-
-    # TODO: Needs to be other way round. Ground truth being an array of values,
-    # and accessors like .x, .y, .m, .b etc should be @propertys
-    # TODO: Also supply gradient accessor that respects the ordering of the
-    # parameters. Maybe .jac() ?
-    @property
-    def properties(self):
-        raise NotImplementedError(
-            "{} doesn't have `properties` implemented yet".format(self.__class__)
-        )
-
-    def with_grads(self, grads):
-        self_copy = copy.copy(self)
-        self_copy.gradients = grads
-        return self_copy
 
     def with_grads_from_previous(self, inputs, local_grads):
         """
@@ -47,7 +43,7 @@ class GradientCarrier:
         returns: an instance of this particular GradientCarrier with the gradient set
         """
         self_copy = copy.copy(self)
-        assert self_copy.gradients == {}
+        # assert self_copy.gradients == {}
 
         self_copy.gradients = update_grads(inputs, local_grads)
         return self_copy
@@ -55,28 +51,32 @@ class GradientCarrier:
 
 class Scalar(GradientCarrier):
     def __init__(self, value):
-        super().__init__()
+        basegrads = {}
 
-        # TODO: Change, inelegant. Lookup how coercion is usually done
         if isinstance(value, Scalar):
-            self.value = value.value
-            self.gradients = value.gradients
-            return
+            basegrads = value.grads
+            value = value.value
 
-        self.value = value
+        self._basegradients = basegrads
+        self._params = [value]
         self.name = None
 
     @property
-    def properties(self):
-        return [self.value]
+    def value(self):
+        return self._params[0]
+    
+    def with_grads(self, grads):
+        self_copy = copy.copy(self)
+        self_copy._basegradients = grads
+        return self_copy
 
     def __repr__(self):
         return "Scalar({:.4f})".format(self.value)
 
-    def __eq__(self: Scalar, other: Union[Scalar, float, int]):
+    def __eq__(self: Scalar, other: Union[Scalar, float, int]) -> bool:
         if not isinstance(other, Scalar):
             return np.isclose(self.value, other)
-        
+
         coords_equal = self.value == other.value
         grads_equal = True
 
@@ -86,6 +86,41 @@ class Scalar(GradientCarrier):
                 break
 
         return coords_equal and grads_equal
+
+    def __lt__(scal1: Scalar, other: Union[Scalar, float, int]) -> bool:
+        if not isinstance(other, Scalar):
+            return scal1.value < other
+
+        # TODO: Is there a meaningful less than comparison amongst gradients?
+        coords_equal = scal1.value < other.value
+        return coords_equal
+
+    def __le__(scal1: Scalar, other: Union[Scalar, float, int]) -> bool:
+        return (scal1 < other) or (scal1 == other)
+
+    # TODO: Add gt, ge
+
+    def __rpow__(power: Scalar, base:Any) -> bool:
+        return Scalar(base) ** power
+
+    def __pow__(base: Scalar, power) -> bool:
+        power = Scalar(power)
+
+        val_new = base.value ** power.value
+
+        # The log is very brittle. But it's evaluation is actually only needed when
+        # the exponent contains gradients, hence we don't evaluate it if no need be
+        d_dpower = -1
+        if power.grads != {}:
+            d_dpower = val_new * np.log(base.value)
+
+        inputs = {"base": base, "power": power}
+        grads = {
+            "base": [[power.value * base.value ** (power.value - 1)]],
+            "power": [[d_dpower]],
+        }
+
+        return Scalar(val_new).with_grads_from_previous(inputs, grads)
 
     def __radd__(scal1: Scalar, scal2: Any) -> Scalar:
         return scal1 + scal2
@@ -159,42 +194,106 @@ class Scalar(GradientCarrier):
         return param
 
 
+## UTILS
+# TODO: Move to own file
+
+def tan(angle: Scalar) -> Scalar:
+    angle = Scalar(angle)
+
+    inputs = {"angle": angle}
+    grads = {"angle": [[1/(np.cos(angle.value)**2)]]}
+
+    val_out = np.tan(angle.value)
+
+    return Scalar(val_out).with_grads_from_previous(inputs, grads)
+
+def arctan(angle: Scalar) -> Scalar:
+    angle = Scalar(angle)
+
+    inputs = {"angle": angle}
+    grads = {"angle": [[1/(angle.value**2 + 1)]]}
+
+    val_out = np.arctan(angle.value)
+
+    return Scalar(val_out).with_grads_from_previous(inputs, grads)
+
+def sin(scal: Scalar) -> Scalar:
+    scal = Scalar(scal)
+
+    inputs = {"s": scal}
+
+    grads = {}
+    grads["s"] = [[np.cos(scal.value)]]
+
+    val_out = np.sin(scal.value)
+
+    return Scalar(val_out).with_grads_from_previous(inputs, grads)
+
+
+def cos(scal: Scalar) -> Scalar:
+    scal = Scalar(scal)
+
+    inputs = {"s": scal}
+
+    grads = {}
+    grads["s"] = [[-np.sin(scal.value)]]
+
+    val_out = np.cos(scal.value)
+
+    return Scalar(val_out).with_grads_from_previous(inputs, grads)
+
+
+def combine_gradients(carriers: ty.List[Scalar]):
+    inputs: ty.List[str] = []
+    for carrier in carriers:
+        inputs.extend([key for key in carrier.grads.keys() if key not in inputs])
+    # inputs = ["l", "sx", "sy",...]
+
+    grads = {}
+    for input_name in inputs:
+        grads[input_name] = [0] * len(carriers)
+    # grads = {'x1': [0, 0], 'x2': [0, 0], 'y1': [0, 0], 'y2': [0, 0]}
+
+    for iout, carrier in enumerate(carriers):
+        for input_name in inputs:
+            # grads {'x': array([[9.23958299e-10]]), 's': array([[-0.05108443]])}
+            if not input_name in carrier.grads:
+                continue
+
+            dout_dinput = carrier.grads[input_name][0][0]
+            grads[input_name][iout] = dout_dinput
+
+    # turn into column vector
+    for gradname, gradvals in grads.items():
+        grads[gradname] = np.reshape(gradvals, [-1, 1])
+
+    return grads
+
+
 class Point(GradientCarrier):
     def __init__(self, x, y):
-        super().__init__()
-
-        x = Scalar(x)
-        y = Scalar(y)
-
-        inputs = {"_x": x, "_y": y}
-        local_grads = {"_x": [[1], [0]], "_y": [[0], [1]]}
-
-        self.x = x.value
-        self.y = y.value
-        self.gradients = update_grads(inputs, local_grads)
+        self._params = [Scalar(x), Scalar(y)]
 
     @property
-    def properties(self):
-        return [self.x, self.y]
+    def x(self):
+        return self._params[0]
+    
+    @property
+    def y(self):
+        return self._params[1]
 
     def as_numpy(self):
-        return np.array([[self.x], [self.y]])
+        return np.reshape([prop.value for prop in self._params], (-1, 1))
 
     def __repr__(self):
         return "Pt({:.4f},{:.4f})".format(self.x, self.y)
 
     def __truediv__(pt: Point, s: ty.Union[Scalar, Number]) -> Point:
         if isinstance(s, Scalar):
-            new_x = pt.x / s.value
-            new_y = pt.y / s.value
+            new_x = pt.x / s
+            new_y = pt.y / s
 
-            inputs = {"pt": pt, "s": s}
-            grads = {
-                "pt": [[1 / s.value, 0], [0, 1 / s.value]],
-                "s": [[-pt.x / (s.value ** 2)], [-pt.y / (s.value ** 2)]],
-            }
-
-            return Point(new_x, new_y).with_grads_from_previous(inputs, grads)
+            return Point(new_x, new_y)
 
         raise NotImplementedError("__truediv__ not yet impl for normal numbers")
 
@@ -211,16 +310,10 @@ class Point(GradientCarrier):
 
     def __mul__(pt: Point, other: ty.Union[Point, Scalar, Number]) -> Point:
         if isinstance(other, Scalar):
-            new_x = pt.x * other.value
-            new_y = pt.y * other.value
+            new_x = pt.x * other
+            new_y = pt.y * other
 
-            inputs = {"pt": pt, "scalar": other}
-            grads = {
-                "pt": [[other.value, 0], [0, other.value]],
-                "scalar": [[pt.x], [pt.y]],
-            }
-
-            return Point(new_x, new_y).with_grads_from_previous(inputs, grads)
+            return Point(new_x, new_y)
 
         raise NotImplementedError(
             "__mul__ not yet implemented for {}".format(type(other))
@@ -273,27 +366,7 @@ class Point(GradientCarrier):
         u = ((1 - m ** 2) * x + 2 * m * y - 2 * m * b) / (m ** 2 + 1)
         v = ((m ** 2 - 1) * y + 2 * m * x + 2 * b) / (m ** 2 + 1)
 
-        du_dpt = [[-1 + 2 / (1 + m ** 2), (2 * m) / (1 + m ** 2)]]
-        dv_dpt = [[(2 * m) / (1 + m ** 2), 1 - 2 / (1 + m ** 2)]]
-        dself_dpt = [*du_dpt, *dv_dpt]
-
-        du_dline = [
-            [
-                (2 * (b * (-1 + m ** 2) + y - m * (2 * x + m * y))) / (1 + m ** 2) ** 2,
-                -((2 * m) / (1 + m ** 2)),
-            ]
-        ]
-        dv_dline = [
-            [
-                (2 * x - 2 * m * (2 * b + m * x - 2 * y)) / (1 + m ** 2) ** 2,
-                2 / (1 + m ** 2),
-            ]
-        ]
-        dself_dline = [*du_dline, *dv_dline]
-        inputs = {"pt": pt, "line": line}
-        grads = {"pt": dself_dpt, "line": dself_dline}
-
-        return Point(u, v).with_grads_from_previous(inputs, grads)
+        return Point(u,v)
 
     def translate(pt: Point, vec: Point) -> Point:
         x2 = pt.x + vec.x
@@ -309,16 +382,9 @@ class Point(GradientCarrier):
 
     def norm(pt: Point):
         eps = 1e-13
+        l2_norm = (eps + pt.x ** 2 + pt.y ** 2) ** 0.5
 
-        l2_norm = np.sqrt(eps + pt.x ** 2 + pt.y ** 2)
-
-        grad_pt = [[pt.x / l2_norm, pt.y / l2_norm]]
-
-        inputs = {"pt": pt}
-        _grads = {}
-        _grads["pt"] = grad_pt
-
-        return Scalar(l2_norm).with_grads_from_previous(inputs, _grads)
+        return Scalar(l2_norm)
 
     def rotate(pt: Point, origin: Point, angle_rad: Scalar) -> Point:
         # TODO: Same for points, coercion
@@ -332,31 +398,10 @@ class Point(GradientCarrier):
 
         angle = angle_rad.value
 
-        x2 = (x1 - ox) * np.cos(angle) - (y1 - oy) * np.sin(angle) + ox
-        y2 = (x1 - ox) * np.sin(angle) + (y1 - oy) * np.cos(angle) + oy
+        x2 = (x1 - ox) * cos(angle_rad) - (y1 - oy) * sin(angle_rad) + ox
+        y2 = (x1 - ox) * sin(angle_rad) + (y1 - oy) * cos(angle_rad) + oy
 
-        d_dpt = np.array(
-            [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]
-        )
-        d_dorigin = [
-            [-np.cos(angle) + 1, np.sin(angle)],
-            [-np.sin(angle), -np.cos(angle) + 1],
-        ]
-        d_dangle = [
-            [(oy - y1) * np.cos(angle) + (ox - x1) * np.sin(angle)],
-            [(-ox + x1) * np.cos(angle) + (oy - y1) * np.sin(angle)],
-        ]
-
-        inputs = {"pt": pt, "origin": origin, "angle": angle_rad}
-
-        _grads = {}
-        _grads["pt"] = d_dpt
-        _grads["origin"] = d_dorigin
-        _grads["angle"] = d_dangle
-
-        pt2 = Point(x2, y2).with_grads_from_previous(inputs, _grads)
-
-        return pt2
+        return Point(x2, y2)
 
 
 Vector = Point
@@ -367,8 +412,9 @@ def update_grads(
     inputs: ty.Dict[str, GradientCarrier],
     local_grads: ty.Dict[str, ty.Union[ty.List[Number], np.ndarray]],
 ):
+    inputs_items = inputs.items()
     incoming_parameters = []
-    for input_name, input_obj in inputs.items():
+    for input_name, input_obj in inputs_items:
         incoming_parameters.extend(
             [
                 grad_name
@@ -376,25 +422,14 @@ def update_grads(
                 if grad_name not in incoming_parameters
             ]
         )
-
-    # Parameters that previous operations don't know anything about
-    # I.e. maybe we did translations on `l` before, and now a rotation
-    # on new parameter `theta`
-    local_params = list(local_grads.keys())
-    input_params = inputs.keys()
-    own_parameters = [
-        param
-        for param in local_params
-        if param not in input_params and param not in incoming_parameters
-    ]
+    
+    some_grad_name = list(local_grads.keys())[0]
+    some_grad = local_grads[some_grad_name]
+    grad_shape = [len(some_grad), 1]
 
     out_grads = {}
-    inputs_items = inputs.items()
-    shapeA = len(local_grads[local_params[0]])
-    for param in incoming_parameters + own_parameters:
-        grads = np.zeros((shapeA, 1))
-
-        # If we have inputs that depended on parameters
+    for param in incoming_parameters:
+        grads = np.zeros(grad_shape)
         for input_name, input_obj in inputs_items:
             # If one of the inputs doesn't depend on the parameter, we simply
             # ignore it. No gradient information in there!
@@ -419,6 +454,7 @@ class Line2(GradientCarrier):
         ox = Scalar(ox)
         oy = Scalar(oy)
 
+        # TODO: Normalize this and warn if it isn't
         dx = Scalar(dx)
         dy = Scalar(dy)
 
@@ -483,21 +519,15 @@ class Line(GradientCarrier):
 
     # TODO: Replace by better representation with no singularities
     def __init__(self, m, b):
-        super().__init__()
-
-        m = Scalar(m)
-        b = Scalar(b)
-
-        inputs = {"m": m, "b": b}
-        local_grads = {"m": [[1], [0]], "b": [[0], [1]]}
-
-        self.m = m.value
-        self.b = b.value
-        self.gradients = update_grads(inputs, local_grads)
+        self._params = [Scalar(m), Scalar(b)]
 
     @property
-    def properties(self):
-        return [self.m, self.b]
+    def m(self):
+        return self._params[0]
+    
+    @property
+    def b(self):
+        return self._params[1]
 
     def __repr__(self):
         return f"Line(m={self.m:.4f}, b={self.b:.4f})"
@@ -522,18 +552,7 @@ class Line(GradientCarrier):
         b = (y1 * x2 - y2 * x1) / (x2 - x1)
         m = (y2 - b) / x2
 
-        dm_dp1 = [[(-y1 + y2) / (x1 - x2) ** 2, 1 / (x1 - x2)]]
-        dm_dp2 = [[(y1 - y2) / (x1 - x2) ** 2, 1 / (-x1 + x2)]]
-
-        db_dp1 = [[(x2 * (y1 - y2)) / (x1 - x2) ** 2, x2 / (-x1 + x2)]]
-        db_dp2 = [[(x1 * (-y1 + y2)) / (x1 - x2) ** 2, x1 / (x1 - x2)]]
-
-        local_grads = {}
-        local_grads["p1"] = d_dpt1 = np.vstack([dm_dp1, db_dp1])
-        local_grads["p2"] = d_dpt2 = np.vstack([dm_dp2, db_dp2])
-
-        new_line = Line(m, b).with_grads_from_previous(inputs, local_grads)
-        return new_line
+        return Line(m, b)
 
     def translate(a_line: Line, vec: Vector) -> Line:
         line_old = copy.deepcopy(a_line)
@@ -541,50 +560,23 @@ class Line(GradientCarrier):
         m = line_old.m
         b = line_old.b + vec.y - line_old.m * vec.x
 
-        inputs = {"vec": vec, "line": line_old}
-        grads = {}
-        grads["vec"] = [[0, 0], [-line_old.m, 1]]
-        grads["line"] = [[1, 0], [-vec.x, 1]]
-
-        new_line = Line(m, b).with_grads_from_previous(inputs, grads)
-
-        return new_line
+        return Line(m, b)
 
     def rotate_ccw(line1: Line, angle_rad: Scalar, pivot: Point = None) -> Line:
+        angle_rad = Scalar(angle_rad)
+        
         if pivot is None:
             pivot = Point(0, 0)
-
-        if not isinstance(angle_rad, Scalar):
-            angle_rad = Scalar(angle_rad)
 
         line_centered = line1.translate(-pivot)
 
         m = line_centered.m
         b = line_centered.b
 
-        m2 = np.tan(np.arctan(m) + angle_rad.value)
+        m2 = tan(arctan(m) + angle_rad)
         b2 = b
 
-        sec = lambda x: 1 / np.cos(x)
-        d_dangle = np.radians(sec(angle_rad.value + np.arctan(m)) ** 2)
-
-        local_grads = {}
-        local_grads["angle_rad"] = [
-            [d_dangle],
-            [0],
-        ]
-        local_grads["line_centered"] = [
-            [d_dangle / (1 + m ** 2), 0],
-            [0, 1],
-        ]
-
-        inputs = {"angle_rad": angle_rad, "line_centered": line_centered}
-
-        rotated_line = Line(m2, b2).with_grads_from_previous(inputs, local_grads)
-
-        new_line = rotated_line.translate(pivot)
-
-        return new_line
+        return Line(m2, b2).translate(pivot)
 
     def intersect(line_1: Line, line_2: Line) -> Point:
         m1 = line_1.m
@@ -596,20 +588,7 @@ class Line(GradientCarrier):
         x = (b2 - b1) / (m1 - m2)
         y = m1 * x + b1
 
-        # dx_dline meaning [dx_dm, dx_db]
-        dx_dline1 = [[(b1 - b2) / (m1 - m2) ** 2, 1 / (-m1 + m2)]]
-        dx_dline2 = [[(-b1 + b2) / (m1 - m2) ** 2, 1 / (m1 - m2)]]
-
-        dy_dline1 = [[((b1 - b2) * m2) / (m1 - m2) ** 2, -(m2 / (m1 - m2))]]
-        dy_dline2 = [[((-b1 + b2) * m1) / (m1 - m2) ** 2, m1 / (m1 - m2)]]
-
-        inputs = {"line_1": line_1, "line_2": line_2}
-        local_grads = {
-            "line_1": np.vstack([dx_dline1, dy_dline1]),
-            "line_2": np.vstack([dx_dline2, dy_dline2]),
-        }
-
-        return Point(x, y).with_grads_from_previous(inputs, local_grads)
+        return Point(x,y)
 
     def plot(self, ax=None, lims=(-20, 20, 10), label=None):
         import matplotlib.pyplot as plt  # type: ignore

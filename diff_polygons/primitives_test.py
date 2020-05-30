@@ -76,7 +76,7 @@ class TestScalar:
         assert a == a
         assert a == b
         assert b == a
-        
+
         assert a == real1
         assert real1 == a
 
@@ -89,14 +89,31 @@ class TestScalar:
 
         f = lambda x: x[0] + x[1]
 
-        # Scalar - Scalar
-        assert f([s1, s2]).value == real1 + real2
         check_all_grads(f, [s1, s2])
 
+        # Scalar - Scalar
+        assert f([s1, s2]).value == real1 + real2
         # Scalar - float
         assert (s1 + real2).value == real1 + real2
         # float - Scalar
         assert (real1 + s2).value == real1 + real2
+
+    @given(reals2(min_value=1, max_value=10), reals2(min_value=2, max_value=5))
+    def test_pow(self, base, power):
+        p_base = Scalar.Param("base", base)
+        p_power = Scalar.Param("power", power)
+
+        f = lambda x: x[0] ** x[1]
+
+        # Higher tolerance because powers are so sensitive
+        check_all_grads(f, [p_base, p_power], tol=1e-3)
+
+        # Scalar - Scalar
+        assert f([p_base, p_power]).value == base ** power
+        # Scalar - float
+        assert (p_base ** power).value == base ** power
+        # float - Scalar
+        assert (base ** p_power).value == base ** power
 
     @given(
         reals2(min_value=-1000, max_value=1000), reals2(min_value=-1000, max_value=1000)
@@ -108,10 +125,10 @@ class TestScalar:
         f = lambda x: x[0] - x[1]
         s3 = f([s1, s2])
 
-        # Scalar - Scalar
-        assert s3.value == real1 - real2
         check_all_grads(f, [s1, s2])
 
+        # Scalar - Scalar
+        assert s3.value == real1 - real2
         # Scalar - float
         assert (s1 - real2).value == real1 - real2
         # float - Scalar
@@ -125,10 +142,10 @@ class TestScalar:
         f = lambda x: x[0] * x[1]
         s3 = f([s1, s2])
 
-        # Scalar - Scalar
-        assert s3.value == real1 * real2
         check_all_grads(f, [s1, s2])
 
+        # Scalar - Scalar
+        assert s3.value == real1 * real2
         # Scalar - float
         assert (s1 * real2).value == real1 * real2
         # float - Scalar
@@ -167,8 +184,8 @@ class TestIntegration:
         pt4 = pt3.translate(Vector(0, 0.5 * l))
         pt5 = pt4.translate(Vector(4 * l2, 0))
 
-        assert np.allclose(pt5.x, l.value * np.cos(theta.value) + 4 * l2.value)
-        assert np.allclose(pt5.y, l.value * np.sin(theta.value) + 0.5 * l.value)
+        assert np.allclose(pt5.x.value, l.value * np.cos(theta.value) + 4 * l2.value)
+        assert np.allclose(pt5.y.value, l.value * np.sin(theta.value) + 0.5 * l.value)
 
         assert "l2" in pt5.grads
         assert np.allclose(
@@ -255,16 +272,17 @@ class TestPoint:
         assert np.allclose(f([0, 2]).as_numpy(), [[3], [1]])
         check_all_grads(f, [m, b])
 
-    def test_parameter_translate(self):
-        l = Scalar.Param("l", 3.0)
-
+    def test_translate(self):
         pt = Point(0, 0)
-        pt2 = pt.translate(Point(l, 0))
+        f = lambda x: pt.translate(Point(x[0], 0))
+
+        l = Scalar.Param("l", 3.0)
+        check_all_grads(f, [l])
+
+        pt2 = f([l])
 
         assert pt is not pt2
         assert pt2.x == l.value
-        assert np.shape(pt2.grads["l"]) == (2, 1)
-        assert np.allclose(pt2.grads["l"], [[1], [0]])
 
     def test_rotation(self):
         pt1 = Point(2, 0)
@@ -274,8 +292,8 @@ class TestPoint:
         pt2 = pt1.rotate(origin, angle)
 
         assert pt2 is not pt1
-        assert np.isclose(np.sqrt(2), pt2.x)
-        assert np.isclose(np.sqrt(2), pt2.y)
+        assert np.isclose(np.sqrt(2), pt2.x.value)
+        assert np.isclose(np.sqrt(2), pt2.y.value)
 
     @given(
         reals2(min_value=-100, max_value=100),
@@ -303,15 +321,33 @@ class TestPoint:
         angle = Param("angle", np.radians(angle))
         check_all_grads(f, [x1, y1, x2, y2, angle])
 
-    @given(reals, reals, reals, reals)
+    @given(
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
+    )
     def test_subtraction(self, x1, y1, x2, y2):
-        pt1 = Point(x1, y1)
-        pt2 = Point(x2, y2)
+        def f(x):
+            x1, y1, x2, y2 = x
 
-        diff_vec = pt1 - pt2
+            pt1 = Point(x1, y1)
+            pt2 = Point(x2, y2)
+
+            return pt1 - pt2
+
+        x1 = Param("x1", x1)
+        y1 = Param("y1", y1)
+
+        x2 = Param("x2", x2)
+        y2 = Param("y2", y2)
+
+        diff_vec = f([x1, y1, x2, y2])
 
         assert diff_vec.x == x1 - x2
         assert diff_vec.y == y1 - y2
+
+        check_all_grads(f, [x1, y1, x2, y2])
 
     @given(
         reals,
@@ -388,8 +424,8 @@ class TestLine2:
 
         intersect = line1.intersect(line2)
 
-        assert np.isclose(intersect.x, 2.3333333333)
-        assert np.isclose(intersect.y, 3.3333333333)
+        assert np.isclose(intersect.x.value, 2.3333333333)
+        assert np.isclose(intersect.y.value, 3.3333333333)
 
         h = Param("h", 2.0)
         line_a = Line2.make_from_points(Point(0, 0), Point(1, 1))
@@ -399,6 +435,43 @@ class TestLine2:
         intersect_2 = line_horiz.intersect(line_a)
         assert np.allclose(intersect.as_numpy(), [[2], [2]])
         assert np.allclose(intersect.as_numpy(), intersect_2.as_numpy())
+
+    @given(
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100),
+    )
+    def test_intersection_grad(self, x1, y1, dx, dy):
+        if np.isclose(dx**2 + dy**2, 0):
+            return
+        
+        dir_ = Vector(dx, dy)
+        dir_length = dir_.norm()
+
+        dir_ /= dir_length
+        dx = dir_.x
+        dy = dir_.y
+
+        # check if colinear with line against we check
+        if abs(np.dot([dx.value, dy.value], [np.sqrt(0.5), np.sqrt(0.5)])) > 0.8:
+            return
+
+        def f(x) -> Point:
+            ox, oy, dx, dy = x
+
+            line_a = Line2(ox, oy, dx, dy)
+            line_b = Line2(0, 0, np.sqrt(0.5), np.sqrt(0.5))
+            intersect2 = line_a.intersect(line_b)
+
+            return intersect2
+
+        x1 = Param("x1", x1)
+        y1 = Param("y1", y1)
+        dx = Param("dx", dx)
+        dy = Param("dy", dy)
+
+        check_all_grads(f, [x1, y1, dx, dy])
 
 
 class TestLine:
@@ -430,7 +503,7 @@ class TestLine:
 
             return line2
 
-        assert np.isclose(f([theta]).m, np.tan(theta.value))
+        assert np.isclose(f([theta]).m.value, np.tan(theta.value))
         assert f([theta]).b == real_b
         # check_all_grads(f, [theta])
 
@@ -460,8 +533,8 @@ class TestLine:
 
         intersect = line1.intersect(line2)
 
-        assert np.isclose(intersect.x, 2.33333)
-        assert np.isclose(intersect.y, 3.33333)
+        assert np.isclose(intersect.x.value, 2.33333)
+        assert np.isclose(intersect.y.value, 3.33333)
 
         h = Param("h", 2.0)
         line_a = Line.make_from_points(Point(0, 0), Point(1, 1))
@@ -528,18 +601,25 @@ class TestLine:
 
 
 def central_diff(fun, x, epsilon):
-    return (fun(x + epsilon) - fun(x - epsilon)) / (2 * epsilon)
+    res = (fun(x + epsilon) - fun(x - epsilon)) / (2 * epsilon)
+
+    if isinstance(res, Scalar):
+        return res.value
+
+    return res
 
 
 def check_grad_c(fun, gradfun, x, epsilon):
-    diff = central_diff(fun, x, epsilon)
-
+    grad_numerical = central_diff(fun, x, epsilon)
     grad_analytic = gradfun(x)
 
-    return abs(grad_analytic - diff)
+    err_abs = abs(grad_analytic - grad_numerical)
+    err_rel = err_abs / (grad_numerical + epsilon)
+
+    return err_abs, err_rel
 
 
-def check_all_grads(fun, x: List[Param], tol=1e-5, eps=1e-6):
+def check_all_grads(fun, x: List[Param], tol=1e-5, rtol=0.01, eps=1e-6):
     """
     Takes a GradientCarrier object and checks all its gradients against the 
     numerical equivalent.
@@ -554,14 +634,14 @@ def check_all_grads(fun, x: List[Param], tol=1e-5, eps=1e-6):
     gradients = [param.name for param in x]
     xx = np.array(x)
 
-    for iout, output in enumerate(fun(x).properties):
+    for iout, output in enumerate(fun(x)._params):
         for igrad, grad_name in enumerate(gradients):
 
             def fun_m(x_scalar):
                 x_full = xx.copy()
                 x_full[igrad] = x_scalar[0]
 
-                return fun(x_full).properties[iout]
+                return fun(x_full)._params[iout]
 
             def grad_m(x_scalar):
                 x_full = xx.copy()
@@ -573,8 +653,10 @@ def check_all_grads(fun, x: List[Param], tol=1e-5, eps=1e-6):
             # variable in order for check_grad to compare the correct entries
             partial_x = np.array([xx[igrad]])
 
+            err_abs, err_rel = check_grad_c(fun_m, grad_m, partial_x, epsilon=eps) 
+
             try:
-                assert check_grad_c(fun_m, grad_m, partial_x, epsilon=eps) < tol
+                assert (err_abs < tol) or (err_rel < rtol)
             except Exception as e:
                 gradient_numerical = central_diff(fun_m, partial_x, epsilon=eps)
                 gradient_analytic = grad_m(partial_x)
@@ -584,4 +666,3 @@ def check_all_grads(fun, x: List[Param], tol=1e-5, eps=1e-6):
                 print(f"Grad analytical: {gradient_analytic}")
 
                 raise e
-
