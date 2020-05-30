@@ -319,7 +319,7 @@ class Point(GradientCarrier):
         return np.reshape([prop.value for prop in self._params], (-1, 1))
 
     def __repr__(self):
-        return "Pt({:.4f},{:.4f})".format(self.x, self.y)
+        return "Pt({:.4f},{:.4f})".format(self.x.value, self.y.value)
 
     def __truediv__(pt: Point, s: ty.Union[Scalar, Number]) -> Point:
         if isinstance(s, Scalar):
