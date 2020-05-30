@@ -345,14 +345,16 @@ class Point(GradientCarrier):
         return pt1.same_as(pt2)
 
     def __mul__(pt: Point, other: ty.Union[Point, Scalar, Number]) -> Point:
-        if isinstance(other, Scalar):
+        if isinstance(other, Scalar) or isinstance(other, Number):
+            other = Scalar(other)
+
             new_x = pt.x * other
             new_y = pt.y * other
 
             return Point(new_x, new_y)
 
         raise NotImplementedError(
-            "__mul__ not yet implemented for {}".format(type(other))
+            "__mul__ not implemented for {}".format(type(other))
         )
 
     def __sub__(pt1: Point, pt2: Point) -> Point:
