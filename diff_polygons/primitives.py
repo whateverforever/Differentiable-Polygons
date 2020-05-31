@@ -508,6 +508,15 @@ class Line2(GradientCarrier):
         s1 = ((o2y - o1y) * d1x - (o2x - o1x) * d1y) / (d2x * d1y - d2y * d1x)
 
         return line1.eval_at(s1)
+    
+    def translate(a_line: Line2, vec: Vector) -> Line2:
+        origin = Point(a_line.ox, a_line.oy)
+        origin = origin.translate(vec)
+
+        return Line2(origin.x, origin.y, a_line.dx, a_line.dy)
+
+    def rotate_ccw(line1: Line2, angle_rad: Scalar, pivot: Point = None) -> Line2:
+        pass
 
     def plot(self, ax=plt):
         s = np.arange(0, 10)

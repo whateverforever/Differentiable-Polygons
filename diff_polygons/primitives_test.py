@@ -397,9 +397,8 @@ class TestPoint:
             pt2 = Point(x2, y2)
 
             return pt1 + pt2
-        
-        check_all_grads(f, [x1, y1, x2, y2])
 
+        check_all_grads(f, [x1, y1, x2, y2])
 
     @given(reals, reals, reals)
     def test_mul(self, x, y, scalar):
@@ -453,9 +452,9 @@ class TestLine2:
         reals2(min_value=-100, max_value=100),
     )
     def test_intersection_grad(self, x1, y1, dx, dy):
-        if np.isclose(dx**2 + dy**2, 0):
+        if np.isclose(dx ** 2 + dy ** 2, 0):
             return
-        
+
         dir_ = Vector(dx, dy)
         dir_length = dir_.norm()
 
@@ -482,6 +481,18 @@ class TestLine2:
         dy = Param("dy", dy)
 
         check_all_grads(f, [x1, y1, dx, dy])
+
+    @given(reals)
+    def test_translation(self, offset_y):
+        def f(x):
+            (offset_y,) = x
+            line_horiz = Line2(0, 0, 1, 0)
+            res = line_horiz.translate(Vector(0, offset_y))
+
+            return res
+        
+        res = f([offset_y])
+        assert res.oy == offset_y
 
 
 class TestLine:
@@ -663,7 +674,7 @@ def check_all_grads(fun, x: List[Param], tol=1e-5, rtol=0.01, eps=1e-6):
             # variable in order for check_grad to compare the correct entries
             partial_x = np.array([xx[igrad]])
 
-            err_abs, err_rel = check_grad_c(fun_m, grad_m, partial_x, epsilon=eps) 
+            err_abs, err_rel = check_grad_c(fun_m, grad_m, partial_x, epsilon=eps)
 
             try:
                 assert (err_abs < tol) or (err_rel < rtol)
