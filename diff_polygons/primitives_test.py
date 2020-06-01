@@ -505,14 +505,14 @@ class TestLine2:
         check_all_grads(f, [x1, y1, dx, dy])
 
     @given(reals)
-    def test_translation(self, offset_y):
-        def f(x):
-            (offset_y,) = x
-            line_horiz = Line2(0, 0, 1, 0)
-            return line_horiz.translate(Vector(0, offset_y))
+    def test_translation(self, offset):
+        line_horiz = Line2(0, 0, 1, 0)
+        line_horiz = line_horiz.translate(Vector(0, offset))
+        assert line_horiz.oy == offset
 
-        res = f([offset_y])
-        assert res.oy == offset_y
+        line_vert = Line2(0,0,0, 1)
+        line_vert = line_vert.translate(Vector(offset, 0))
+        assert line_vert.ox == offset
 
     @given(
         rreals,
