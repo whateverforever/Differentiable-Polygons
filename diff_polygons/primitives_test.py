@@ -18,7 +18,8 @@ from .primitives import (
 
 reals = floats(allow_infinity=False, allow_nan=False)
 reals2 = lambda **kwargs: floats(allow_infinity=False, allow_nan=False, **kwargs)
-
+# reasonable reals
+rreals = floats(allow_infinity=False, allow_nan=False, min_value=-100000, max_value=100000)
 
 def test_update_grads():
     l = a = Scalar.Param("l", 2.0)
