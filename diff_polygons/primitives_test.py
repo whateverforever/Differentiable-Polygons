@@ -430,8 +430,8 @@ class TestLine2:
     @given(
     rreals,
     rreals,
-    rreals,
-    rreals,
+    rreals.filter(lambda x: abs(x)>0.5),
+    rreals.filter(lambda x: abs(x)>0.5),
     )
     def test_init_grads(self, ox, oy, dx, dy):
         def f(x):
@@ -443,9 +443,6 @@ class TestLine2:
         oy = Param("oyy", oy)
 
         dir_len = sqrt(dx ** 2 + dy ** 2)
-        if dir_len < 0.5:
-            return
-
         dx = Param("dx", dx / dir_len)
         dy = Param("dy", dy / dir_len)
 
@@ -476,13 +473,10 @@ class TestLine2:
     @given(
         reals2(min_value=-100, max_value=100),
         reals2(min_value=-100, max_value=100),
-        reals2(min_value=-100, max_value=100),
-        reals2(min_value=-100, max_value=100),
+        reals2(min_value=-100, max_value=100).filter(lambda x: abs(x)>0.5),
+        reals2(min_value=-100, max_value=100).filter(lambda x: abs(x)>0.5),
     )
     def test_intersection_grad(self, x1, y1, dx, dy):
-        if np.isclose(dx ** 2 + dy ** 2, 0):
-            return
-
         dir_ = Vector(dx, dy)
         dir_length = dir_.norm()
 
