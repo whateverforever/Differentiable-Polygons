@@ -18,3 +18,7 @@
 - [ ] All functions have complete type annotations
 - [ ] The util functions with gradients are in a file of their own, with tests of their own
 - [ ] Both main code files have no more than 500 sloc
+
+# Addendum
+
+- [ ] Replace all variation of reals() with one specific instance
