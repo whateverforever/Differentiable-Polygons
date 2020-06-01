@@ -29,7 +29,7 @@ except ImportError:
 class MartinezPointWithGrad(MPoint):
     def __init__(self, pt_grad_carrier):
         self.gradients = pt_grad_carrier.grads
-        super().__init__(pt_grad_carrier.x, pt_grad_carrier.y)
+        super().__init__(pt_grad_carrier.x.value, pt_grad_carrier.y.value)
 
     def to_differentiable(self):
         pt = Point(self.x, self.y)
@@ -333,7 +333,7 @@ class MultiPolygon:
         polygons = mpoly._polygons
 
         for ipoly, poly in enumerate(polygons):
-            points2D = [(point.x, point.y) for point in poly._points]
+            points2D = [(point.x.value, point.y.value) for point in poly._points]
 
             facecolor = "orange"
             if debug:
@@ -344,7 +344,7 @@ class MultiPolygon:
             ax.add_patch(patch_poly)
 
             for ihole, holepts in enumerate(poly._holes):
-                points2D = [(point.x, point.y) for point in holepts]
+                points2D = [(point.x.value, point.y.value) for point in holepts]
 
                 facecolor = "white"
                 if debug_holes:
