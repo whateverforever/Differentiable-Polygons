@@ -3,8 +3,8 @@ from math import sqrt
 
 from hypothesis import given, settings
 from hypothesis.strategies import floats
-
-settings.register_profile("old_pc", deadline=500)
+ 
+settings.register_profile("old_pc", deadline=1000)
 settings.load_profile("old_pc")
 
 import numpy as np  # type:ignore
