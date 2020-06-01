@@ -471,10 +471,10 @@ class TestLine2:
         assert np.allclose(intersect.as_numpy(), intersect_2.as_numpy())
 
     @given(
-        reals2(min_value=-100, max_value=100),
-        reals2(min_value=-100, max_value=100),
-        reals2(min_value=-100, max_value=100).filter(lambda x: abs(x)>0.5),
-        reals2(min_value=-100, max_value=100).filter(lambda x: abs(x)>0.5),
+        rreals,
+        rreals,
+        rreals.filter(lambda x: abs(x)>0.5),
+        rreals.filter(lambda x: abs(x)>0.5),
     )
     def test_intersection_grad(self, x1, y1, dx, dy):
         dir_ = Vector(dx, dy)
