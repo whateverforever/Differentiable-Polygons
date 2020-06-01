@@ -1,8 +1,10 @@
 from typing import List
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import floats
 
+settings.register_profile("old_pc", deadline=500)
+settings.load_profile("old_pc")
 import numpy as np  # type:ignore
 from .primitives import (
     Scalar,
