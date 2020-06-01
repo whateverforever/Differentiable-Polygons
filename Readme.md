@@ -22,3 +22,13 @@
 # Addendum
 
 - [ ] Replace all variation of reals() with one specific instance
+- [ ] Harmonize rotate() names
+
+## Performance Log
+
+```
+ad2ad3d48c97775c3f70f77e1e68286198d39bb4 (01.06.2020)
+
+Analytic grads take 0.667s (min: 0.618, std: 0.033)
+Numerical grads take 1.052s (min: 0.950, std: 0.085)
+```
