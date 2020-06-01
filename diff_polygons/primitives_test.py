@@ -1,10 +1,12 @@
 from typing import List
+from math import sqrt
 
 from hypothesis import given, settings
 from hypothesis.strategies import floats
 
 settings.register_profile("old_pc", deadline=500)
 settings.load_profile("old_pc")
+
 import numpy as np  # type:ignore
 from .primitives import (
     Scalar,
@@ -425,6 +427,29 @@ class TestPoint:
 
 
 class TestLine2:
+    @given(
+    rreals,
+    rreals,
+    rreals,
+    rreals,
+    )
+    def test_init_grads(self, ox, oy, dx, dy):
+        def f(x):
+            ox, oy, dx, dy = x
+
+            return Line2(ox, oy, dx, dy)
+
+        ox = Param("oxx", ox)
+        oy = Param("oyy", oy)
+
+        dir_len = sqrt(dx ** 2 + dy ** 2)
+        if dir_len < 0.5:
+            return
+
+        dx = Param("dx", dx / dir_len)
+        dy = Param("dy", dy / dir_len)
+
+        check_all_grads(f, [ox, oy, dx, dy])
     def test_from_points(self):
         pt1 = Point(1, 1)
         pt2 = pt1.translate(Point(1.23, 0))
@@ -490,12 +515,40 @@ class TestLine2:
         def f(x):
             (offset_y,) = x
             line_horiz = Line2(0, 0, 1, 0)
-            res = line_horiz.translate(Vector(0, offset_y))
+            return line_horiz.translate(Vector(0, offset_y))
 
-            return res
-        
         res = f([offset_y])
         assert res.oy == offset_y
+
+    @given(
+        rreals,
+        rreals,
+        rreals,
+        rreals,
+        rreals,
+        rreals,
+    )
+    def tests_translation_grads(self, ox, oy, dx, dy, tx, ty):
+        def f(x):
+            ox, oy, dx, dy, tx, ty = x
+
+            line = Line2(ox, oy, dx, dy)
+            return line.translate(Vector(tx, ty))
+
+        ox = Param("ox", ox)
+        oy = Param("oy", oy)
+
+        dir_len = sqrt(dx ** 2 + dy ** 2)
+        if dir_len < 0.5:
+            return
+
+        dx = Param("dx", dx / dir_len)
+        dy = Param("dy", dy / dir_len)
+
+        tx = Param("tx", tx)
+        ty = Param("ty", ty)
+
+        check_all_grads(f, [ox, oy, dx, dy, tx, ty])
 
 
 class TestLine:
