@@ -415,7 +415,6 @@ class Point(GradientCarrier):
         return Scalar(l2_norm)
 
     def rotate(pt: Point, origin: Point, angle_rad: Scalar) -> Point:
-        # TODO: Same for points, coercion
         angle_rad = Scalar(angle_rad)
 
         x1 = pt.x
@@ -516,7 +515,13 @@ class Line2(GradientCarrier):
         return Line2(origin.x, origin.y, a_line.dx, a_line.dy)
 
     def rotate_ccw(line1: Line2, angle_rad: Scalar, pivot: Point = None) -> Line2:
-        pass
+        direction = Vector(line1.dx, line1.dy)
+        direction = direction.rotate(Point(0,0), angle_rad)
+
+        orig = Point(line1.ox, line1.oy)
+        orig = orig.rotate(pivot, angle_rad)
+
+        return Line2(orig.x, orig.y, direction.x, direction.y)
 
     def plot(self, ax=plt):
         s = np.arange(0, 10)

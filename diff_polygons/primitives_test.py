@@ -1,5 +1,5 @@
 from typing import List
-from math import sqrt
+from math import sqrt, isclose, pi
 
 from hypothesis import given, settings
 from hypothesis.strategies import floats
@@ -543,7 +543,30 @@ class TestLine2:
         ty = Param("ty", ty)
 
         check_all_grads(f, [ox, oy, dx, dy, tx, ty])
+    
+    def test_rotation(self):
+        line = Line2(0,0,1,0)
+        line = line.rotate_ccw(pi/2, Point(-1,-1))
 
+        assert np.isclose(line.dx.value, 0.0)
+        assert np.isclose(line.dy.value, 1.0)
+
+        assert np.isclose(line.ox.value, -2.0)
+        assert np.isclose(line.oy.value, 0.0)
+    
+    @given(rreals, rreals, rreals)
+    def test_rotation_grad(self, angle, px, py):
+        def f(x):
+            angle, px, py = x
+
+            line = Line2(1.23, 3.45, 4.56/8.17, 6.78/8.17)
+            return line.rotate_ccw(angle, pivot=Point(px, py))
+        
+        angle = Param("angle", angle)
+        px = Param("px", px)
+        py = Param("py", py)
+
+        check_all_grads(f, [angle, px, py])
 
 class TestLine:
     def test_from_points(self):
