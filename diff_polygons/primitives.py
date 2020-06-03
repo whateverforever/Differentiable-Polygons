@@ -515,6 +515,9 @@ class Line2(GradientCarrier):
         return Line2(origin.x, origin.y, a_line.dx, a_line.dy)
 
     def rotate_ccw(line1: Line2, angle_rad: Scalar, pivot: Point = None) -> Line2:
+        if pivot is None:
+            pivot = Point(0,0)
+
         direction = Vector(line1.dx, line1.dy)
         direction = direction.rotate(Point(0,0), angle_rad)
 
