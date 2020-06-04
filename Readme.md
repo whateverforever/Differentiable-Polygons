@@ -3,8 +3,8 @@
 # Definition of Done
 
 - [x] Point contains all important methods
-- [ ] Line has been completely replaced by Line2
-- [ ] Line contains all important methods
+- [x] Line has been completely replaced by Line2
+- [x] Line contains all important methods
 - [ ] Add tests for all methods of polygons
 - [ ] All GradientCarriers use _params notation (harmonize!)
 - [ ] Polygons apply all their operations to their holes as well
