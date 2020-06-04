@@ -384,17 +384,8 @@ class Point(GradientCarrier):
 
         return a * a + b * b <= eps * eps
 
-    def mirror_across_line(pt: Point, line: Line) -> Point:
-        x = pt.x
-        y = pt.y
-
-        m = line.m
-        b = line.b
-
-        u = ((1 - m ** 2) * x + 2 * m * y - 2 * m * b) / (m ** 2 + 1)
-        v = ((m ** 2 - 1) * y + 2 * m * x + 2 * b) / (m ** 2 + 1)
-
-        return Point(u, v)
+    def mirror_across_line(pt: Point, line: Line2) -> Point:
+        return line.mirror_pt(pt)
 
     def translate(pt: Point, vec: Point) -> Point:
         x2 = pt.x + vec.x

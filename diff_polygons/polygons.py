@@ -150,9 +150,9 @@ class Polygon:
         return Polygon(points)
 
     # TODO: also mirror holes
-    def mirror_across_line(poly: Polygon, line: Line) -> Polygon:
+    def mirror_across_line(poly: Polygon, line) -> Polygon:
         points = poly.points
-        points_new = [point.mirror_across_line(line) for point in points]
+        points_new = [line.mirror_pt(point) for point in points]
 
         return Polygon(points_new)
 
