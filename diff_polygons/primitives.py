@@ -429,7 +429,13 @@ class Point(GradientCarrier):
         y2 = (x1 - ox) * sin(angle_rad) + (y1 - oy) * cos(angle_rad) + oy
 
         return Point(x2, y2)
-
+    
+    def project_onto(pt: Point, vec: Vector) -> Scalar:
+        vec_len = vec.norm().value
+        if not isclose(vec_len, 1):
+            warnings.warn("Vector you're trying to project onto doesn't have unit length: {:.3f}".format(vec_len))
+        
+        return pt.x * vec.x + pt.y * vec.y
 
 Vector = Point
 Param = Scalar.Param
