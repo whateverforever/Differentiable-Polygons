@@ -146,7 +146,7 @@ def create_unit_cell(
     cell_right = cell_bottom.mirror_across_line(line_right)
     lower_half = MultiPolygon.FromMultipolygons([cell_bottom, cell_left, cell_right])
 
-    line_horiz_top = Line(0, 0).translate(corner_top)
+    line_horiz_top = Line(0, 0, 1, 0).translate(corner_top)
     upper_half = lower_half.mirror_across_line(line_horiz_top)
 
     hex_disconnected = MultiPolygon.FromMultipolygons([lower_half, upper_half])
