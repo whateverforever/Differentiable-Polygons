@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt  # type:ignore
 from matplotlib.path import Path  # type:ignore
 import matplotlib.patches as patches  # type:ignore
 
-from .primitives import Line, Vector, Point, Scalar, Param, GradientCarrier
+from .primitives import Line2, Vector, Point, Scalar, Param, GradientCarrier
 
 try:
     from martinez.polygon import Polygon as MPolygon  # type:ignore
@@ -150,7 +150,7 @@ class Polygon:
         return Polygon(points)
 
     # TODO: also mirror holes
-    def mirror_across_line(poly: Polygon, line) -> Polygon:
+    def mirror_across_line(poly: Polygon, line:Line2) -> Polygon:
         points = poly.points
         points_new = [line.mirror_pt(point) for point in points]
 
@@ -396,7 +396,7 @@ class MultiPolygon:
 
         return MultiPolygon(polys)
 
-    def mirror_across_line(mpoly: MultiPolygon, line: Line) -> MultiPolygon:
+    def mirror_across_line(mpoly: MultiPolygon, line: Line2) -> MultiPolygon:
         polygons = mpoly.polygons
         polygons_new = [poly.mirror_across_line(line) for poly in polygons]
 

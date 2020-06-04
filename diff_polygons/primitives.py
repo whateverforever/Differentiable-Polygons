@@ -423,7 +423,7 @@ class Point(GradientCarrier):
     
     def project_onto(pt: Point, vec: Vector) -> Scalar:
         vec_len = vec.norm().value
-        if not isclose(vec_len, 1):
+        if abs(vec_len - 1) > 0.01:
             warnings.warn("Vector you're trying to project onto doesn't have unit length: {:.3f}".format(vec_len))
         
         return pt.x * vec.x + pt.y * vec.y
@@ -548,92 +548,3 @@ class Line2(GradientCarrier):
         xys = [(pt.x, pt.y) for pt in pts]
 
         ax.plot(*zip(*xys))
-
-
-class Line(GradientCarrier):
-    """ Simple class representing a line, used to construct the unit cell """
-
-    # TODO: Replace by better representation with no singularities
-    def __init__(self, m, b):
-        self._params = [Scalar(m), Scalar(b)]
-
-    @property
-    def m(self):
-        return self._params[0]
-
-    @property
-    def b(self):
-        return self._params[1]
-
-    def __repr__(self):
-        return f"Line(m={self.m:.4f}, b={self.b:.4f})"
-
-    # TODO: Remove, make into normal method
-    @staticmethod
-    def make_from_points(p1: Point, p2: Point):
-        return Line.make_from_points_({"p1": p1, "p2": p2})
-
-    @staticmethod
-    def make_from_points_(inputs: ty.Dict[str, Point]):
-        """ Returns line that goes through p1 and p2 """
-        p1 = inputs["p1"]
-        p2 = inputs["p2"]
-
-        x1 = p1.x
-        y1 = p1.y
-
-        x2 = p2.x
-        y2 = p2.y
-
-        b = (y1 * x2 - y2 * x1) / (x2 - x1)
-        m = (y2 - b) / x2
-
-        return Line(m, b)
-
-    def translate(a_line: Line, vec: Vector) -> Line:
-        line_old = copy.deepcopy(a_line)
-
-        m = line_old.m
-        b = line_old.b + vec.y - line_old.m * vec.x
-
-        return Line(m, b)
-
-    def rotate_ccw(line1: Line, angle_rad: Scalar, pivot: Point = None) -> Line:
-        angle_rad = Scalar(angle_rad)
-
-        if pivot is None:
-            pivot = Point(0, 0)
-
-        line_centered = line1.translate(-pivot)
-
-        m = line_centered.m
-        b = line_centered.b
-
-        m2 = tan(arctan(m) + angle_rad)
-        b2 = b
-
-        return Line(m2, b2).translate(pivot)
-
-    def intersect(line_1: Line, line_2: Line) -> Point:
-        m1 = line_1.m
-        b1 = line_1.b
-
-        m2 = line_2.m
-        b2 = line_2.b
-
-        x = (b2 - b1) / (m1 - m2)
-        y = m1 * x + b1
-
-        return Point(x, y)
-
-    def plot(self, ax=None, lims=(-20, 20, 10), label=None):
-        import matplotlib.pyplot as plt  # type: ignore
-
-        if ax is None:
-            ax = plt
-
-        x = np.linspace(*lims)
-        y = self.m * x + self.b
-
-        ax.plot(x, y, label=label)
-        ax.axis("equal")

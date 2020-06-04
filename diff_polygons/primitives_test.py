@@ -13,7 +13,6 @@ from .primitives import (
     Param,
     Point,
     Vector,
-    Line,
     Line2,
     update_grads,
 )  # type:ignore
@@ -262,20 +261,21 @@ class TestAPI:
 
 class TestPoint:
     # very variable behaviour, sometimes passes, sometimes doesnt
-    @given(reals2(min_value=-1, max_value=1), reals2(min_value=-100, max_value=100))
-    def test_mirror_axis(self, some_m, some_b):
+    @given(rreals.filter(lambda x: abs(x) > 0.5), rreals.filter(lambda x: abs(x) > 0.5))
+    def test_mirror_axis(self, dx, dy):
         def f(x):
-            m, b = x
+            dx, dy = x
             pt = Point(3, 3)
-            line = Line(m, b)
-            pt_mirr = pt.mirror_across_line(line)
+            line = Line2(0, 0, dx, dy)
+            pt_mirr = line.mirror_pt(pt)
             return pt_mirr
 
-        m = Param("m", some_m)
-        b = Param("b", some_b)
+        dir_len = sqrt(dx**2 + dy**2)
+        dx = Param("dx", dx/dir_len) 
+        dy = Param("dy", dy/dir_len)
 
-        assert np.allclose(f([0, 2]).as_numpy(), [[3], [1]])
-        check_all_grads(f, [m, b])
+        assert np.allclose(f([1, 0]).as_numpy(), [[3], [-3]])
+        check_all_grads(f, [dx, dy])
 
     def test_translate(self):
         pt = Point(0, 0)
@@ -450,7 +450,7 @@ class TestLine2:
     
     def test_mirror_pt(self):
         pt = Point(3,3)
-        
+
         line_horiz = Line2(0,0,1,0)
         pt2 = line_horiz.mirror_pt(pt)
 
@@ -583,131 +583,6 @@ class TestLine2:
         py = Param("py", py)
 
         check_all_grads(f, [angle, px, py])
-
-class TestLine:
-    def test_from_points(self):
-        l = Scalar.Param("l", 2.0)
-        theta = Scalar.Param("theta", np.radians(60))
-
-        pt = Point(1, 1)
-        pt2 = pt.translate(Point(l, 0))
-
-        line = Line.make_from_points(pt2, pt)
-
-        assert np.shape(line.grads["l"]) == (2, 1)
-        assert line.b == 1
-        assert line.m == 0
-
-        # TODO: Check grad values
-
-    # TODO: Replace this shitty line parameterization with singularities everywhere
-    @given(reals2(min_value=-88, max_value=88), reals)
-    def test_rotation(self, real_angle, real_b):
-        theta = Param("theta", np.radians(real_angle))
-
-        def f(x):
-            (theta,) = x
-
-            line = Line(0, real_b)
-            line2 = line.rotate_ccw(theta)
-
-            return line2
-
-        assert np.isclose(f([theta]).m.value, np.tan(theta.value))
-        assert f([theta]).b == real_b
-        # check_all_grads(f, [theta])
-
-    # TODO: With new parameterized line: Take 0 into account and negative vals
-    @given(reals2(min_value=0.1, max_value=100))
-    def test_translation(self, l_val):
-        def f(x):
-            (l,) = x
-
-            pt = Point(1, 1)
-            pt2 = pt.translate(Point(l, 0))
-
-            line = Line.make_from_points(pt2, pt)
-            line2 = line.translate(Vector(l, l))
-            return line2
-
-        l = Param("l", l_val)
-        line2 = f([l])
-
-        assert line2.b == l_val + 1
-        assert line2.m == 0
-        check_all_grads(f, [l])
-
-    def test_intersection(self):
-        line1 = Line.make_from_points(Point(0, 1), Point(1, 2))
-        line2 = Line.make_from_points(Point(4, 0), Point(3, 2))
-
-        intersect = line1.intersect(line2)
-
-        assert np.isclose(intersect.x.value, 2.33333)
-        assert np.isclose(intersect.y.value, 3.33333)
-
-        h = Param("h", 2.0)
-        line_a = Line.make_from_points(Point(0, 0), Point(1, 1))
-        line_horiz = Line.make_from_points(Point(0, h), Point(5, h))
-
-        intersect = line_a.intersect(line_horiz)
-        assert np.allclose(intersect.as_numpy(), [[2], [2]])
-        assert np.allclose(intersect.grads["h"], [[1], [1]])
-
-        intersect_2 = line_horiz.intersect(line_a)
-        assert np.allclose(intersect.as_numpy(), intersect_2.as_numpy())
-        assert np.allclose(intersect.grads["h"], intersect_2.grads["h"])
-
-    @given(
-        reals2(min_value=-100, max_value=100),
-        reals2(min_value=-100, max_value=100),
-        reals2(min_value=-100, max_value=100),
-        reals2(min_value=-100, max_value=100),
-    )
-    def test_intersection_grad(self, m1, m2, b1, b2):
-        # For nearly colinear lines, the intersection is too sensitive
-        # for comparison of the numerical gradient
-        if abs(np.arctan(m1) - np.arctan(m2)) <= np.radians(10):
-            return
-
-        def f(x) -> Point:
-            m1, m2, b1, b2 = x
-
-            line_a = Line(m1, b1)
-            line_b = Line(m2, b2)
-            intersect2 = line_a.intersect(line_b)
-
-            return intersect2
-
-        m1 = Param("m1", m1)
-        m2 = Param("m2", m2)
-        b1 = Param("b1", b1)
-        b2 = Param("b2", b2)
-
-        check_all_grads(f, [m1, m2, b1, b2])
-
-    def test_from_const(self):
-        line = Line(0.5, 0)
-
-        assert line.m == 0.5
-        assert line.b == 0
-
-        assert line.grads == {}
-
-    def test_from_params(self):
-        param_m = Scalar.Param("param_m", 0.5)
-        param_b = Scalar.Param("param_b", 0.5)
-
-        line = Line(param_m, param_b)
-
-        assert "param_m" in line.grads
-        assert "param_b" in line.grads
-
-        assert line.grads["param_m"].shape == (2, 1)
-        assert line.grads["param_b"].shape == (2, 1)
-
-        assert np.allclose(line.grads["param_m"], [[1], [0]])
-        assert np.allclose(line.grads["param_b"], [[0], [1]])
 
 
 def central_diff(fun, x, epsilon):
