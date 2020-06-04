@@ -447,6 +447,22 @@ class TestLine2:
         dy = Param("dy", dy / dir_len)
 
         check_all_grads(f, [ox, oy, dx, dy])
+    
+    def test_mirror_pt(self):
+        pt = Point(3,3)
+        
+        line_horiz = Line2(0,0,1,0)
+        pt2 = line_horiz.mirror_pt(pt)
+
+        assert pt2.x == 3
+        assert pt2.y == -3
+
+        line_vert = Line2(0,0,0,1)
+        pt3 = line_vert.mirror_pt(pt)
+
+        assert pt3.x == -3
+        assert pt3.y == 3
+
     def test_from_points(self):
         pt1 = Point(1, 1)
         pt2 = pt1.translate(Point(1.23, 0))

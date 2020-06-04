@@ -539,6 +539,17 @@ class Line2(GradientCarrier):
         orig = orig.rotate(pivot, angle_rad)
 
         return Line2(orig.x, orig.y, direction.x, direction.y)
+    
+    def mirror_pt(line: Line2, pt: Point) -> Point:
+        pt_relative = pt - line.origin
+        dist = pt_relative.project_onto(line.direction)
+
+        pt_on_ray = line.direction * dist
+        vec_perp = pt_on_ray - pt_relative
+        
+        pt_mirrored = pt_on_ray + vec_perp + line.origin
+
+        return pt_mirrored
 
     def plot(self, ax=plt):
         s = np.arange(0, 10)
