@@ -13,7 +13,7 @@ from .primitives import (
     Param,
     Point,
     Vector,
-    Line2,
+    Line,
     update_grads,
 )  # type:ignore
 
@@ -266,7 +266,7 @@ class TestPoint:
         def f(x):
             dx, dy = x
             pt = Point(3, 3)
-            line = Line2(0, 0, dx, dy)
+            line = Line(0, 0, dx, dy)
             pt_mirr = line.mirror_pt(pt)
             return pt_mirr
 
@@ -426,7 +426,7 @@ class TestPoint:
         assert np.allclose(res.grads["yy"], [[0.0], [s.value]])
 
 
-class TestLine2:
+class TestLine:
     @given(
     rreals,
     rreals,
@@ -437,7 +437,7 @@ class TestLine2:
         def f(x):
             ox, oy, dx, dy = x
 
-            return Line2(ox, oy, dx, dy)
+            return Line(ox, oy, dx, dy)
 
         ox = Param("oxx", ox)
         oy = Param("oyy", oy)
@@ -451,13 +451,13 @@ class TestLine2:
     def test_mirror_pt(self):
         pt = Point(3,3)
 
-        line_horiz = Line2(0,0,1,0)
+        line_horiz = Line(0,0,1,0)
         pt2 = line_horiz.mirror_pt(pt)
 
         assert pt2.x == 3
         assert pt2.y == -3
 
-        line_vert = Line2(0,0,0,1)
+        line_vert = Line(0,0,0,1)
         pt3 = line_vert.mirror_pt(pt)
 
         assert pt3.x == -3
@@ -466,11 +466,11 @@ class TestLine2:
     def test_from_points(self):
         pt1 = Point(1, 1)
         pt2 = pt1.translate(Point(1.23, 0))
-        line = Line2.make_from_points(pt2, pt1)
+        line = Line.make_from_points(pt2, pt1)
 
     def test_intersection(self):
-        line1 = Line2.make_from_points(Point(0, 1), Point(1, 2))
-        line2 = Line2.make_from_points(Point(4, 0), Point(3, 2))
+        line1 = Line.make_from_points(Point(0, 1), Point(1, 2))
+        line2 = Line.make_from_points(Point(4, 0), Point(3, 2))
 
         intersect = line1.intersect(line2)
 
@@ -478,8 +478,8 @@ class TestLine2:
         assert np.isclose(intersect.y.value, 3.3333333333)
 
         h = Param("h", 2.0)
-        line_a = Line2.make_from_points(Point(0, 0), Point(1, 1))
-        line_horiz = Line2.make_from_points(Point(0, h), Point(5, h))
+        line_a = Line.make_from_points(Point(0, 0), Point(1, 1))
+        line_horiz = Line.make_from_points(Point(0, h), Point(5, h))
 
         intersect = line_a.intersect(line_horiz)
         intersect_2 = line_horiz.intersect(line_a)
@@ -507,8 +507,8 @@ class TestLine2:
         def f(x) -> Point:
             ox, oy, dx, dy = x
 
-            line_a = Line2(ox, oy, dx, dy)
-            line_b = Line2(0, 0, np.sqrt(0.5), np.sqrt(0.5))
+            line_a = Line(ox, oy, dx, dy)
+            line_b = Line(0, 0, np.sqrt(0.5), np.sqrt(0.5))
             intersect2 = line_a.intersect(line_b)
 
             return intersect2
@@ -522,11 +522,11 @@ class TestLine2:
 
     @given(reals)
     def test_translation(self, offset):
-        line_horiz = Line2(0, 0, 1, 0)
+        line_horiz = Line(0, 0, 1, 0)
         line_horiz = line_horiz.translate(Vector(0, offset))
         assert line_horiz.oy == offset
 
-        line_vert = Line2(0,0,0, 1)
+        line_vert = Line(0,0,0, 1)
         line_vert = line_vert.translate(Vector(offset, 0))
         assert line_vert.ox == offset
 
@@ -542,7 +542,7 @@ class TestLine2:
         def f(x):
             ox, oy, dx, dy, tx, ty = x
 
-            line = Line2(ox, oy, dx, dy)
+            line = Line(ox, oy, dx, dy)
             return line.translate(Vector(tx, ty))
 
         ox = Param("ox", ox)
@@ -561,7 +561,7 @@ class TestLine2:
         check_all_grads(f, [ox, oy, dx, dy, tx, ty])
     
     def test_rotation(self):
-        line = Line2(0,0,1,0)
+        line = Line(0,0,1,0)
         line = line.rotate_ccw(pi/2, Point(-1,-1))
 
         assert np.isclose(line.dx.value, 0.0)
@@ -575,7 +575,7 @@ class TestLine2:
         def f(x):
             angle, px, py = x
 
-            line = Line2(1.23, 3.45, 4.56/8.17, 6.78/8.17)
+            line = Line(1.23, 3.45, 4.56/8.17, 6.78/8.17)
             return line.rotate_ccw(angle, pivot=Point(px, py))
         
         angle = Param("angle", angle)

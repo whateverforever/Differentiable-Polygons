@@ -384,7 +384,7 @@ class Point(GradientCarrier):
 
         return a * a + b * b <= eps * eps
 
-    def mirror_across_line(pt: Point, line: Line2) -> Point:
+    def mirror_across_line(pt: Point, line: Line) -> Point:
         return line.mirror_pt(pt)
 
     def translate(pt: Point, vec: Point) -> Point:
@@ -432,7 +432,7 @@ Vector = Point
 Param = Scalar.Param
 
 
-class Line2(GradientCarrier):
+class Line(GradientCarrier):
     """
     An infinite line. Parametrized by origin and direction vector. (4 parameters)
     """
@@ -460,9 +460,9 @@ class Line2(GradientCarrier):
         self._params = [ox, oy, dx, dy]
 
     @staticmethod
-    def make_from_points(pt1: Point, pt2: Point) -> Line2:
+    def make_from_points(pt1: Point, pt2: Point) -> Line:
         direction = (pt2 - pt1) / Scalar(np.linalg.norm((pt2 - pt1).as_numpy().ravel()))
-        return Line2(pt1.x, pt1.y, direction.x, direction.y)
+        return Line(pt1.x, pt1.y, direction.x, direction.y)
 
     @property
     def ox(self):
@@ -488,7 +488,7 @@ class Line2(GradientCarrier):
     def direction(self):
         return Vector(self.dx, self.dy)
 
-    def eval_at(line: Line2, s) -> Point:
+    def eval_at(line: Line, s) -> Point:
         s = Scalar(s)
 
         x = line.ox + s * line.dx
@@ -496,30 +496,30 @@ class Line2(GradientCarrier):
 
         return Point(x, y)
 
-    def intersect(line1: Line2, line2: Line2) -> Point:
+    def intersect(line1: Line, Line: Line) -> Point:
         o2x = line1.ox
-        o1x = line2.ox
+        o1x = Line.ox
 
         o2y = line1.oy
-        o1y = line2.oy
+        o1y = Line.oy
 
         d2x = line1.dx
-        d1x = line2.dx
+        d1x = Line.dx
 
         d2y = line1.dy
-        d1y = line2.dy
+        d1y = Line.dy
 
         s1 = ((o2y - o1y) * d1x - (o2x - o1x) * d1y) / (d2x * d1y - d2y * d1x)
 
         return line1.eval_at(s1)
     
-    def translate(a_line: Line2, vec: Vector) -> Line2:
+    def translate(a_line: Line, vec: Vector) -> Line:
         origin = Point(a_line.ox, a_line.oy)
         origin = origin.translate(vec)
 
-        return Line2(origin.x, origin.y, a_line.dx, a_line.dy)
+        return Line(origin.x, origin.y, a_line.dx, a_line.dy)
 
-    def rotate_ccw(line1: Line2, angle_rad: Scalar, pivot: Point = None) -> Line2:
+    def rotate_ccw(line1: Line, angle_rad: Scalar, pivot: Point = None) -> Line:
         if pivot is None:
             pivot = Point(0,0)
 
@@ -529,9 +529,9 @@ class Line2(GradientCarrier):
         orig = Point(line1.ox, line1.oy)
         orig = orig.rotate(pivot, angle_rad)
 
-        return Line2(orig.x, orig.y, direction.x, direction.y)
+        return Line(orig.x, orig.y, direction.x, direction.y)
     
-    def mirror_pt(line: Line2, pt: Point) -> Point:
+    def mirror_pt(line: Line, pt: Point) -> Point:
         pt_relative = pt - line.origin
         dist = pt_relative.project_onto(line.direction)
 

@@ -2,7 +2,7 @@ import numpy as np  # type:ignore
 import matplotlib.pyplot as plt  # type:ignore
 
 from diff_polygons import (
-    Line2 as Line,
+    Line as Line,
     Vector,
     Point,
     Scalar,
