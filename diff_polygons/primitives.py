@@ -488,6 +488,14 @@ class Line2(GradientCarrier):
     @property
     def dy(self):
         return self._params[3]
+    
+    @property
+    def origin(self):
+        return Point(self.ox, self.oy)
+    
+    @property
+    def direction(self):
+        return Vector(self.dx, self.dy)
 
     def eval_at(line: Line2, s) -> Point:
         s = Scalar(s)
