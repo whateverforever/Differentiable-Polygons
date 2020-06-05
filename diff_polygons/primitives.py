@@ -4,47 +4,12 @@ import copy
 import typing as ty
 import warnings
 from math import isclose, sqrt
+from numbers import Number
 
 import numpy as np  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
 
-from numbers import Number
-
-
-def update_grads(
-    inputs: ty.Dict[str, GradientCarrier],
-    local_grads: ty.Dict[str, ty.Union[ty.List[Number], np.ndarray]],
-):
-    inputs_items = inputs.items()
-    incoming_parameters = []
-    for input_name, input_obj in inputs_items:
-        incoming_parameters.extend(
-            [
-                grad_name
-                for grad_name in input_obj.gradients.keys()
-                if grad_name not in incoming_parameters
-            ]
-        )
-
-    some_grad_name = list(local_grads.keys())[0]
-    some_grad = local_grads[some_grad_name]
-    grad_shape = [len(some_grad), 1]
-
-    out_grads = {}
-    for param in incoming_parameters:
-        grads = np.zeros(grad_shape)
-        for input_name, input_obj in inputs_items:
-            # If one of the inputs doesn't depend on the parameter, we simply
-            # ignore it. No gradient information in there!
-            if param in input_obj.gradients:
-                dself_dinput = local_grads[input_name]
-                dinput_dparam = input_obj.gradients[param]
-
-                grads += np.matmul(dself_dinput, dinput_dparam)
-
-        out_grads[param] = grads
-    return out_grads
-
+from math import sin as _sin, cos as _cos, atan as _arctan, tan as _tan
 
 # TODO: Split this? Make only scalar GradientCarrier and Point, Line, etc.
 # are somehow groups of "gradiented" scalars?
@@ -229,85 +194,6 @@ class Scalar(GradientCarrier):
         param.name = name
 
         return param
-
-
-## UTILS
-# TODO: Move to own file
-
-
-def tan(angle: Scalar) -> Scalar:
-    angle = Scalar(angle)
-
-    inputs = {"angle": angle}
-    grads = {"angle": [[1 / (np.cos(angle.value) ** 2)]]}
-
-    val_out = np.tan(angle.value)
-
-    return Scalar(val_out).with_grads_from_previous(inputs, grads)
-
-
-def arctan(angle: Scalar) -> Scalar:
-    angle = Scalar(angle)
-
-    inputs = {"angle": angle}
-    grads = {"angle": [[1 / (angle.value ** 2 + 1)]]}
-
-    val_out = np.arctan(angle.value)
-
-    return Scalar(val_out).with_grads_from_previous(inputs, grads)
-
-
-def sin(scal: Scalar) -> Scalar:
-    scal = Scalar(scal)
-
-    inputs = {"s": scal}
-
-    grads = {}
-    grads["s"] = [[np.cos(scal.value)]]
-
-    val_out = np.sin(scal.value)
-
-    return Scalar(val_out).with_grads_from_previous(inputs, grads)
-
-
-def cos(scal: Scalar) -> Scalar:
-    scal = Scalar(scal)
-
-    inputs = {"s": scal}
-
-    grads = {}
-    grads["s"] = [[-np.sin(scal.value)]]
-
-    val_out = np.cos(scal.value)
-
-    return Scalar(val_out).with_grads_from_previous(inputs, grads)
-
-
-def combine_gradients(carriers: ty.List[Scalar]):
-    inputs: ty.List[str] = []
-    for carrier in carriers:
-        inputs.extend([key for key in carrier.grads.keys() if key not in inputs])
-    # inputs = ["l", "sx", "sy",...]
-
-    grads = {}
-    for input_name in inputs:
-        grads[input_name] = [0] * len(carriers)
-    # grads = {'x1': [0, 0], 'x2': [0, 0], 'y1': [0, 0], 'y2': [0, 0]}
-
-    for iout, carrier in enumerate(carriers):
-        for input_name in inputs:
-            # grads {'x': array([[9.23958299e-10]]), 's': array([[-0.05108443]])}
-            if not input_name in carrier.grads:
-                continue
-
-            dout_dinput = carrier.grads[input_name][0][0]
-            grads[input_name][iout] = dout_dinput
-
-    # turn into column vector
-    for gradname, gradvals in grads.items():
-        grads[gradname] = np.reshape(gradvals, [-1, 1])
-
-    return grads
 
 
 class Point(GradientCarrier):
@@ -548,3 +434,113 @@ class Line(GradientCarrier):
         xys = [(pt.x, pt.y) for pt in pts]
 
         ax.plot(*zip(*xys))
+
+# Utilities
+
+def update_grads(
+    inputs: ty.Dict[str, GradientCarrier],
+    local_grads: ty.Dict[str, ty.Union[ty.List[Number], np.ndarray]],
+):
+    inputs_items = inputs.items()
+    incoming_parameters = []
+    for input_name, input_obj in inputs_items:
+        incoming_parameters.extend(
+            [
+                grad_name
+                for grad_name in input_obj.gradients.keys()
+                if grad_name not in incoming_parameters
+            ]
+        )
+
+    some_grad_name = list(local_grads.keys())[0]
+    some_grad = local_grads[some_grad_name]
+    grad_shape = [len(some_grad), 1]
+
+    out_grads = {}
+    for param in incoming_parameters:
+        grads = np.zeros(grad_shape)
+        for input_name, input_obj in inputs_items:
+            # If one of the inputs doesn't depend on the parameter, we simply
+            # ignore it. No gradient information in there!
+            if param in input_obj.gradients:
+                dself_dinput = local_grads[input_name]
+                dinput_dparam = input_obj.gradients[param]
+
+                grads += np.matmul(dself_dinput, dinput_dparam)
+
+        out_grads[param] = grads
+    return out_grads
+
+def tan(angle: Scalar) -> Scalar:
+    angle = Scalar(angle)
+
+    inputs = {"angle": angle}
+    grads = {"angle": [[1 / (_cos(angle.value) ** 2)]]}
+
+    val_out = _tan(angle.value)
+
+    return Scalar(val_out).with_grads_from_previous(inputs, grads)
+
+
+def arctan(angle: Scalar) -> Scalar:
+    angle = Scalar(angle)
+
+    inputs = {"angle": angle}
+    grads = {"angle": [[1 / (angle.value ** 2 + 1)]]}
+
+    val_out = _arctan(angle.value)
+
+    return Scalar(val_out).with_grads_from_previous(inputs, grads)
+
+
+def sin(scal: Scalar) -> Scalar:
+    scal = Scalar(scal)
+
+    inputs = {"s": scal}
+
+    grads = {}
+    grads["s"] = [[_cos(scal.value)]]
+
+    val_out = _sin(scal.value)
+
+    return Scalar(val_out).with_grads_from_previous(inputs, grads)
+
+
+def cos(scal: Scalar) -> Scalar:
+    scal = Scalar(scal)
+
+    inputs = {"s": scal}
+
+    grads = {}
+    grads["s"] = [[-_sin(scal.value)]]
+
+    val_out = _cos(scal.value)
+
+    return Scalar(val_out).with_grads_from_previous(inputs, grads)
+
+
+def combine_gradients(carriers: ty.List[Scalar]):
+    inputs: ty.List[str] = []
+    for carrier in carriers:
+        inputs.extend([key for key in carrier.grads.keys() if key not in inputs])
+    # inputs = ["l", "sx", "sy",...]
+
+    grads = {}
+    for input_name in inputs:
+        grads[input_name] = [0] * len(carriers)
+    # grads = {'x1': [0, 0], 'x2': [0, 0], 'y1': [0, 0], 'y2': [0, 0]}
+
+    for iout, carrier in enumerate(carriers):
+        for input_name in inputs:
+            # grads {'x': array([[9.23958299e-10]]), 's': array([[-0.05108443]])}
+            if not input_name in carrier.grads:
+                continue
+
+            dout_dinput = carrier.grads[input_name][0][0]
+            grads[input_name][iout] = dout_dinput
+
+    # turn into column vector
+    for gradname, gradvals in grads.items():
+        grads[gradname] = np.reshape(gradvals, [-1, 1])
+
+    return grads
