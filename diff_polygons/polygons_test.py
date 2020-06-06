@@ -73,4 +73,18 @@ class TestPolygon:
         assert bb["miny"] == np.min(ys)
         assert bb["maxy"] == np.max(ys)
 
+    @given(lists(reals, min_size=6, max_size=100), lists(lists(reals, min_size=6, max_size=100)))
+    def test_copy(self, ptvals, holes):
+        pts, _, _ = pts_from_random_list(ptvals)
+        holes = [pts_from_random_list(holevals) for holevals in holes]
+
+        poly = Polygon(pts, holes)
+        poly2 = poly.copy()
+
+        assert poly.points == poly2.points
+        assert poly.holes == poly2.holes
+
+        assert poly.points is not poly2.points
+        assert poly.holes is not poly2.holes
+
 

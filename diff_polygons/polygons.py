@@ -98,7 +98,7 @@ class Polygon:
         return copy.copy(self._bounding_box)
 
     def copy(self):
-        return Polygon(copy.copy(self._points))
+        return Polygon(copy.copy(self._points), copy.copy(self._holes))
 
     def bounding_box_intersects(poly1: Polygon, poly2: Polygon, grow=0.00) -> bool:
         bb1 = poly1.bounding_box
