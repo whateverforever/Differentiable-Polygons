@@ -1,3 +1,5 @@
+import numpy as np
+
 from .primitives import Point, Param
 from .polygons import Polygon, MultiPolygon
 
@@ -20,3 +22,21 @@ class TestPolygon:
         assert len(poly.holes) == 0
 
         poly2 = Polygon([pt1, pt2, pt3], [hole1, hole2, hole3])
+
+        assert poly2.holes[0] == hole1
+        assert poly2.holes[1] == hole2
+        assert poly2.holes[2] == hole3
+
+    def test_as_numpy(self):
+        points = [
+            Point(0,0),
+            Point(1,2),
+            Point(3,4),
+            Point(-1,2)
+        ]
+
+        poly = Polygon(points)
+        pts, holes = poly.as_numpy()
+
+        assert np.allclose(pts, [[0,0],[1,2],[3,4],[-1,2]])
+        assert np.allclose(holes, [])
