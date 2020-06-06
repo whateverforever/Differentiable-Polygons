@@ -1,8 +1,26 @@
 import numpy as np
 
+from hypothesis import given
+from hypothesis.strategies import floats, lists
+
 from .primitives import Point, Param
 from .polygons import Polygon, MultiPolygon
 
+reals = floats(
+    allow_infinity=False, allow_nan=False, min_value=-100000, max_value=100000
+)
+
+def pts_from_random_list(vals):
+    if len(vals) % 2 != 0:
+        vals = vals[:-1]
+
+    xys = list(zip(vals, vals[::-1]))[:len(vals)//2]
+    pts = [Point(x,y) for (x,y) in xys]
+
+    xs = [x for (x,y) in xys]
+    ys = [y for (x,y) in xys]
+
+    return pts, xs, ys
 
 class TestPolygon:
     def test_init(self):
@@ -28,21 +46,31 @@ class TestPolygon:
         assert poly2.holes[2] == hole3
 
     def test_as_numpy(self):
-        points = [
-            Point(0,0),
-            Point(1,2),
-            Point(3,4),
-            Point(-1,2)
-        ]
+        points = [Point(0, 0), Point(1, 2), Point(3, 4), Point(-1, 2)]
 
         poly = Polygon(points)
         pts, holes = poly.as_numpy()
 
-        assert np.allclose(pts, [[0,0],[1,2],[3,4],[-1,2]])
+        assert np.allclose(pts, [[0, 0], [1, 2], [3, 4], [-1, 2]])
         assert np.allclose(holes, [])
 
         poly = Polygon(None, [points])
         pts, holes = poly.as_numpy()
 
         assert np.allclose(pts, [])
-        assert np.allclose(holes, [[0,0],[1,2],[3,4],[-1,2]])
+        assert np.allclose(holes, [[0, 0], [1, 2], [3, 4], [-1, 2]])
+
+    @given(lists(reals, min_size=6, max_size=100))
+    def test_bounding_box(self, vals):
+        pts, xs, ys = pts_from_random_list(vals)
+        poly = Polygon(pts)
+
+        bb = poly.bounding_box
+
+        assert bb["minx"] == np.min(xs)
+        assert bb["maxx"] == np.max(xs)
+
+        assert bb["miny"] == np.min(ys)
+        assert bb["maxy"] == np.max(ys)
+
+
