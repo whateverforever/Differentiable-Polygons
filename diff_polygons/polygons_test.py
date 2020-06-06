@@ -40,3 +40,9 @@ class TestPolygon:
 
         assert np.allclose(pts, [[0,0],[1,2],[3,4],[-1,2]])
         assert np.allclose(holes, [])
+
+        poly = Polygon(None, [points])
+        pts, holes = poly.as_numpy()
+
+        assert np.allclose(pts, [])
+        assert np.allclose(holes, [[0,0],[1,2],[3,4],[-1,2]])
