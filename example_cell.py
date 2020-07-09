@@ -135,13 +135,6 @@ def create_unit_cell(
         [flank_lower, flank_right, flank_top, triangle]
     ).join_polygons()
 
-    # Manual removal of colinear points, leftover from join_polygons
-    cell_bottom._polygons[0]._points = [
-        pt
-        for ipt, pt in enumerate(cell_bottom._polygons[0]._points)
-        if ipt not in [2, 8, 14]
-    ]
-
     cell_left = cell_bottom.mirror_across_line(line_left)
     cell_right = cell_bottom.mirror_across_line(line_right)
     lower_half = MultiPolygon.FromMultipolygons([cell_bottom, cell_left, cell_right])
@@ -152,8 +145,9 @@ def create_unit_cell(
     hex_disconnected = MultiPolygon.FromMultipolygons([lower_half, upper_half])
     hex_connected = hex_disconnected.join_polygons()
 
-    return hex_connected.polygons[0]
+    return hex_connected
 
 
 if __name__ == "__main__":
+    print("what")
     main()

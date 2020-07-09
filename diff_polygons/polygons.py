@@ -100,21 +100,14 @@ class Polygon:
     def copy(self):
         return Polygon(copy.copy(self._points), copy.copy(self._holes))
 
-    def bounding_box_intersects(poly1: Polygon, poly2: Polygon, grow=0.00) -> bool:
+    def bounding_box_intersects(poly1: Polygon, poly2: Polygon, grow=0.001) -> bool:
         bb1 = poly1.bounding_box
         bb2 = poly2.bounding_box
 
         scale_fac = grow + 1
 
-        if (
-            False
-            or bb1["minx"] > bb2["maxx"] * scale_fac
-            or bb1["miny"] > bb2["maxy"] * scale_fac
-            or bb1["maxx"] * scale_fac < bb2["minx"]
-            or bb1["maxy"] * scale_fac < bb2["miny"]
-        ):
-            return False
-
+        # TODO: Fix this crappy function
+        
         return True
 
     def draw(self: Polygon, **kwargs):

@@ -96,11 +96,15 @@ class Scalar(GradientCarrier):
             return scal1.value < other
 
         return scal1.value < other.value
+    
+    def __gt__(scal1: Scalar, other: Union[Scalar, float, int]) -> bool:
+        return -scal1 < other
 
     def __le__(scal1: Scalar, other: Union[Scalar, float, int]) -> bool:
         return (scal1 < other) or (scal1 == other)
-
-    # TODO: Add gt, ge
+    
+    def __ge__(scal1: Scalar, other: Union[Scalar, Number]) -> bool:
+        return -scal1 <= other
 
     def __rpow__(power: Scalar, base: Any) -> bool:
         return Scalar(base) ** power

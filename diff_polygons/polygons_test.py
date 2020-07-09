@@ -3,24 +3,26 @@ import numpy as np
 from hypothesis import given
 from hypothesis.strategies import floats, lists
 
-from .primitives import Point, Param
+from .primitives import Point, Vector, Param
 from .polygons import Polygon, MultiPolygon
 
 reals = floats(
     allow_infinity=False, allow_nan=False, min_value=-100000, max_value=100000
 )
 
+
 def pts_from_random_list(vals):
     if len(vals) % 2 != 0:
         vals = vals[:-1]
 
-    xys = list(zip(vals, vals[::-1]))[:len(vals)//2]
-    pts = [Point(x,y) for (x,y) in xys]
+    xys = list(zip(vals, vals[::-1]))[: len(vals) // 2]
+    pts = [Point(x, y) for (x, y) in xys]
 
-    xs = [x for (x,y) in xys]
-    ys = [y for (x,y) in xys]
+    xs = [x for (x, y) in xys]
+    ys = [y for (x, y) in xys]
 
     return pts, xs, ys
+
 
 class TestPolygon:
     def test_init(self):
@@ -73,7 +75,34 @@ class TestPolygon:
         assert bb["miny"] == np.min(ys)
         assert bb["maxy"] == np.max(ys)
 
-    @given(lists(reals, min_size=6, max_size=100), lists(lists(reals, min_size=6, max_size=100)))
+    # TODO: test gradients of bounding box
+    @given(
+        lists(reals, unique_by=lambda x:int(x*0.1)/0.1, min_size=6, max_size=100)
+    )
+    def test_bounding_box_intersects(self, vals):
+        pts, _, _ = pts_from_random_list(vals)
+        poly = Polygon(pts)
+
+        assert poly.bounding_box_intersects(poly) is True
+
+        width = abs((poly.bounding_box["maxx"] - poly.bounding_box["minx"]).value)
+        height = abs((poly.bounding_box["maxy"] - poly.bounding_box["miny"]).value)
+
+        shifted_right = poly.translate(Vector(width, 0))
+        assert poly.bounding_box_intersects(shifted_right) is True
+
+        shifted_up = poly.translate(Vector(0, height))
+        print("poly", poly.bounding_box["maxy"].value)
+        print("upped", shifted_up.bounding_box["miny"].value)
+        print("Intersting:>>>")
+        a = poly.bounding_box_intersects(shifted_up)
+        print("<<<<")
+        assert a is True
+
+    @given(
+        lists(reals, min_size=6, max_size=100),
+        lists(lists(reals, min_size=6, max_size=100)),
+    )
     def test_copy(self, ptvals, holes):
         pts, _, _ = pts_from_random_list(ptvals)
         holes = [pts_from_random_list(holevals) for holevals in holes]
@@ -86,5 +115,3 @@ class TestPolygon:
 
         assert poly.points is not poly2.points
         assert poly.holes is not poly2.holes
-
-
