@@ -104,10 +104,15 @@ class Polygon:
         bb1 = poly1.bounding_box
         bb2 = poly2.bounding_box
 
-        scale_fac = grow + 1
+        if (
+            False
+            or bb1["minx"] > bb2["maxx"] + grow
+            or bb1["miny"] > bb2["maxy"] + grow
+            or bb1["maxx"] + grow < bb2["minx"]
+            or bb1["maxy"] + grow < bb2["miny"]
+        ):
+            return False
 
-        # TODO: Fix this crappy function
-        
         return True
 
     def draw(self: Polygon, **kwargs):

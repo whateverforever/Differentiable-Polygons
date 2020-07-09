@@ -95,7 +95,7 @@ class TestPolygon:
         print("poly", poly.bounding_box["maxy"].value)
         print("upped", shifted_up.bounding_box["miny"].value)
         print("Intersting:>>>")
-        a = poly.bounding_box_intersects(shifted_up)
+        a = poly.bounding_box_intersects(shifted_up, grow=0.01)
         print("<<<<")
         assert a is True
 
