@@ -82,6 +82,9 @@ class Scalar(GradientCarrier):
         self_copy._basegradients = grads
         return self_copy
 
+    def __float__(self):
+        return float(self.value)
+        
     def __repr__(self):
         return "Scalar({:.4f})".format(self.value)
 
