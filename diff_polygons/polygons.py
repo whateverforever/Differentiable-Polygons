@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 from typing import List, Union, Dict, Any
 import warnings
 
@@ -55,11 +54,11 @@ class Polygon:
 
     @property
     def points(poly: Polygon) -> List[Point]:
-        return copy.copy(poly._points)
+        return [*poly._points]
 
     @property
     def holes(poly: Polygon):
-        return copy.copy(poly._holes)
+        return [*poly._holes]
 
     def as_numpy(poly: Polygon, close=False) -> np.ndarray:
         points = poly.points
@@ -95,10 +94,10 @@ class Polygon:
                 "maxy": np.max(ys),
             }
 
-        return copy.copy(self._bounding_box)
+        return {**self._bounding_box}
 
     def copy(self):
-        return Polygon(copy.copy(self._points), copy.copy(self._holes))
+        return Polygon([*self._points], [*self._holes])
 
     def bounding_box_intersects(poly1: Polygon, poly2: Polygon, grow=0.001) -> bool:
         bb1 = poly1.bounding_box
@@ -163,6 +162,15 @@ class Polygon:
 
         return Polygon(points_new, holes_new)
 
+    def scale(poly: Polygon, origin: Point, fac: Scalar) -> Polygon:
+        points = poly.points
+        points_new = [(point.translate(-origin) * fac).translate(origin) for point in points]
+
+        holes = poly._holes
+        holes_new = [[(point.translate(-origin) * fac).translate(origin) for point in hole] for hole in holes]
+
+        return Polygon(points_new, holes_new)
+    
     # TODO: also rotate holes
     def rotate(poly: Polygon, origin: Point, angle: Scalar) -> Polygon:
         points = poly.points
@@ -279,7 +287,7 @@ class MultiPolygon:
 
     @property
     def polygons(self):
-        return copy.copy(self._polygons)
+        return [*self._polygons]
 
     def as_numpy(mpoly: MultiPolygon, close=False):
         return np.array([poly.as_numpy(close=close) for poly in mpoly.polygons])
@@ -355,7 +363,7 @@ class MultiPolygon:
         if draw_grads is not None:
             for poly in polygons:
                 for point in poly.points:
-                    assert isinstance(point, Point)
+                    assert isinstance(point, Point), f"Point is {type(point)}, should be Point"
 
                     for grad_name in draw_grads:
                         if grad_name not in point.grads:

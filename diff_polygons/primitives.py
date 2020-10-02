@@ -11,11 +11,16 @@ import matplotlib.pyplot as plt  # type: ignore
 
 from math import sin as _sin, cos as _cos, atan as _arctan, tan as _tan
 
+GRADS_ENABLED = True
+
 # TODO: Split this? Make only scalar GradientCarrier and Point, Line, etc.
 # are somehow groups of "gradiented" scalars?
 class GradientCarrier:
     @property
     def gradients(self):
+        if not GRADS_ENABLED:
+            return {}
+
         if isinstance(self, Scalar):
             return self._basegradients
 
@@ -23,6 +28,9 @@ class GradientCarrier:
 
     @gradients.setter
     def gradients(self, new_grads):
+        if not GRADS_ENABLED:
+            return
+
         if isinstance(self, Scalar):
             self._basegradients = new_grads
             return
@@ -38,7 +46,7 @@ class GradientCarrier:
 
     @property
     def grads(self):
-        return copy.copy(self.gradients)
+        return {**self.gradients}
 
     def with_grads_from_previous(self, inputs, local_grads):
         """
@@ -54,11 +62,13 @@ class GradientCarrier:
 
         returns: an instance of this particular GradientCarrier with the gradient set
         """
-        self_copy = copy.copy(self)
-        # assert self_copy.gradients == {}
+        if not GRADS_ENABLED:
+            return self
 
-        self_copy.gradients = update_grads(inputs, local_grads)
-        return self_copy
+        # assert self.gradients == {}
+
+        self.gradients = update_grads(inputs, local_grads)
+        return self
 
 
 class Scalar(GradientCarrier):
@@ -78,13 +88,13 @@ class Scalar(GradientCarrier):
         return self._params[0]
 
     def with_grads(self, grads):
-        self_copy = copy.copy(self)
+        self_copy = Scalar(self)
         self_copy._basegradients = grads
         return self_copy
-
+    
     def __float__(self):
         return float(self.value)
-        
+
     def __repr__(self):
         return "Scalar({:.4f})".format(self.value)
 
@@ -272,8 +282,8 @@ class Point(GradientCarrier):
         return Point(x2, y2).with_grads_from_previous(inputs, grads)
 
     def same_as(pt1: Point, pt2: Point, eps=1e-4) -> bool:
-        a = pt1.x - pt2.x
-        b = pt1.y - pt2.y
+        a = pt1.x.value - pt2.x.value
+        b = pt1.y.value - pt2.y.value
 
         return a * a + b * b <= eps * eps
 
